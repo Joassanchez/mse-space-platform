@@ -9,10 +9,16 @@ from pathlib import Path
 from typing import Any
 
 from src.geospatial.domain.models import (
+    Alert,
+    AuditLog,
+    EconomicImpact,
     ExtractedVariable,
     GeospatialMetadata,
     GeospatialProcessingJob,
+    Indicator,
     ProcessedLayer,
+    Region,
+    RiskAssessment,
 )
 
 
@@ -207,5 +213,212 @@ class ProcessedLayerRepository(ABC):
 
         Returns:
             ProcessedLayer if found, None otherwise.
+        """
+        pass
+
+
+# ============================================================
+# Geospatial Storage Interfaces (Módulo 3)
+# ============================================================
+
+
+class RegionRepository(ABC):
+    """CRUD and spatial queries for the regions table."""
+
+    @abstractmethod
+    def save(self, region: Region) -> int:
+        """Insert or update a region record.
+
+        Args:
+            region: The region to persist.
+
+        Returns:
+            The database-assigned region ID.
+        """
+        pass
+
+    @abstractmethod
+    def get_by_id(self, region_id: int) -> Region | None:
+        """Retrieve a region by its database ID.
+
+        Args:
+            region_id: The regions.id value.
+
+        Returns:
+            Region if found, None otherwise.
+        """
+        pass
+
+    @abstractmethod
+    def find_intersecting_geometry(self, wkt: str) -> list[Region]:
+        """Find regions whose geometry intersects the given WKT polygon.
+
+        Uses PostGIS ST_Intersects for spatial query.
+
+        Args:
+            wkt: WKT string of the query geometry (EPSG:4326).
+
+        Returns:
+            List of intersecting Region objects.
+        """
+        pass
+
+
+class IndicatorRepository(ABC):
+    """CRUD and queries for the indicators table."""
+
+    @abstractmethod
+    def save(self, indicator: Indicator) -> int:
+        """Insert an indicator record.
+
+        Args:
+            indicator: The indicator to persist.
+
+        Returns:
+            The database-assigned indicator ID.
+        """
+        pass
+
+    @abstractmethod
+    def find_by_region(self, region_id: int) -> list[Indicator]:
+        """Find all indicators for a given region.
+
+        Args:
+            region_id: The regions.id value.
+
+        Returns:
+            List of Indicator objects for the region.
+        """
+        pass
+
+
+class RiskAssessmentRepository(ABC):
+    """CRUD and queries for the risk_assessments table."""
+
+    @abstractmethod
+    def save(self, assessment: RiskAssessment) -> int:
+        """Insert a risk assessment record.
+
+        Args:
+            assessment: The assessment to persist.
+
+        Returns:
+            The database-assigned assessment ID.
+        """
+        pass
+
+    @abstractmethod
+    def find_by_region_and_date(
+        self, region_id: int, date_from: str | None = None, date_to: str | None = None
+    ) -> list[RiskAssessment]:
+        """Find risk assessments for a region within a date range.
+
+        Args:
+            region_id: The regions.id value.
+            date_from: Start date filter (inclusive).
+            date_to: End date filter (inclusive).
+
+        Returns:
+            List of matching RiskAssessment objects.
+        """
+        pass
+
+
+class AlertRepository(ABC):
+    """CRUD and queries for the alerts table."""
+
+    @abstractmethod
+    def save(self, alert: Alert) -> int:
+        """Insert an alert record.
+
+        Args:
+            alert: The alert to persist.
+
+        Returns:
+            The database-assigned alert ID.
+        """
+        pass
+
+    @abstractmethod
+    def find_active_by_region(self, region_id: int) -> list[Alert]:
+        """Find active alerts for a given region.
+
+        Args:
+            region_id: The regions.id value.
+
+        Returns:
+            List of active Alert objects.
+        """
+        pass
+
+
+class EconomicImpactRepository(ABC):
+    """CRUD and queries for the economic_impacts table."""
+
+    @abstractmethod
+    def save(self, impact: EconomicImpact) -> int:
+        """Insert an economic impact record.
+
+        Args:
+            impact: The impact to persist.
+
+        Returns:
+            The database-assigned impact ID.
+        """
+        pass
+
+    @abstractmethod
+    def find_by_indicator(self, indicator_id: int) -> list[EconomicImpact]:
+        """Find economic impacts associated with an indicator.
+
+        Args:
+            indicator_id: The indicators.id value.
+
+        Returns:
+            List of EconomicImpact objects.
+        """
+        pass
+
+
+class DataSourceRepository(ABC):
+    """Queries for the data_sources table."""
+
+    @abstractmethod
+    def get_by_code(self, code: str) -> dict[str, Any] | None:
+        """Retrieve a data source by its unique code.
+
+        Args:
+            code: The data_sources.code value.
+
+        Returns:
+            Dict of data source fields or None if not found.
+        """
+        pass
+
+    @abstractmethod
+    def get_by_id(self, source_id: int) -> dict[str, Any] | None:
+        """Retrieve a data source by its database ID.
+
+        Args:
+            source_id: The data_sources.id value.
+
+        Returns:
+            Dict of data source fields or None if not found.
+        """
+        pass
+
+
+class AuditRepository(ABC):
+    """Append-only audit log repository."""
+
+    @abstractmethod
+    def log_event(self, audit_log: AuditLog) -> int:
+        """Insert an audit log entry.
+
+        Args:
+            audit_log: The audit log entry to persist.
+
+        Returns:
+            The database-assigned audit log ID.
         """
         pass

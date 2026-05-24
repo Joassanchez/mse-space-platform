@@ -8,13 +8,16 @@ Uses ports/interfaces (dependency injection), NOT concrete implementations.
 Handles errors per file without breaking batch processing.
 """
 
+import logging
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from src.geospatial.domain.constants import Action, ActorType, EntityType
 from src.geospatial.domain.errors import IdempotencySkip, ReadError, ValidationError, WriteError
 from src.geospatial.domain.interfaces import (
+    AuditRepository,
     GeospatialProcessingJobRepository,
     GeospatialReader,
     GeospatialValidator,
@@ -22,10 +25,13 @@ from src.geospatial.domain.interfaces import (
     RawFileDiscoveryRepository,
 )
 from src.geospatial.domain.models import (
+    AuditLog,
     GeospatialMetadata,
     GeospatialProcessingJob,
     ProcessedLayer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class GeospatialOrchestrator:
@@ -57,6 +63,7 @@ class GeospatialOrchestrator:
         layer_repo: ProcessedLayerRepository,
         source_code: str,
         variable_configs: list[dict[str, Any]],
+        audit_repo: AuditRepository | None = None,
     ) -> None:
         self._reader = reader
         self._validator = validator
@@ -67,6 +74,7 @@ class GeospatialOrchestrator:
         self._layer_repo = layer_repo
         self._source_code = source_code
         self._variable_configs = variable_configs
+        self._audit_repo = audit_repo
 
     def run_batch(
         self,
@@ -106,6 +114,15 @@ class GeospatialOrchestrator:
                 "failed": 0,
                 "message": "No files to process",
             }
+
+        # Audit: pipeline start (non-fatal)
+        job_id = str(uuid.uuid4())
+        self._audit_event(
+            entity_type=EntityType.PIPELINE_BATCH,
+            entity_id=job_id,
+            action=Action.START,
+            message=f"Pipeline started for source {self._source_code}",
+        )
 
         # Build processing config
         processing_config = self._build_processing_config(
@@ -250,6 +267,13 @@ class GeospatialOrchestrator:
                 self._job_repo.update_status(
                     job_id, "completed_with_warnings", warnings=warnings
                 )
+                # Audit: completed with warnings (non-fatal)
+                self._audit_event(
+                    entity_type=EntityType.PIPELINE_BATCH,
+                    entity_id=job_id,
+                    action=Action.COMPLETE,
+                    message=f"Pipeline completed with warnings for {raw_file_id}",
+                )
                 return {
                     "raw_file_id": raw_file_id,
                     "job_id": job_id,
@@ -259,6 +283,13 @@ class GeospatialOrchestrator:
                 }
             else:
                 self._job_repo.update_status(job_id, "completed")
+                # Audit: completed successfully (non-fatal)
+                self._audit_event(
+                    entity_type=EntityType.PIPELINE_BATCH,
+                    entity_id=job_id,
+                    action=Action.COMPLETE,
+                    message=f"Pipeline completed successfully for {raw_file_id}",
+                )
                 return {
                     "raw_file_id": raw_file_id,
                     "job_id": job_id,
@@ -276,6 +307,13 @@ class GeospatialOrchestrator:
             }
         except (ValidationError, ReadError, WriteError) as e:
             self._job_repo.update_status(job_id, "failed", error=str(e))
+            # Audit: failed (non-fatal)
+            self._audit_event(
+                entity_type=EntityType.PIPELINE_BATCH,
+                entity_id=job_id,
+                action=Action.FAIL,
+                message=f"Pipeline failed for {raw_file_id}: {e}",
+            )
             return {
                 "raw_file_id": raw_file_id,
                 "job_id": job_id,
@@ -284,6 +322,13 @@ class GeospatialOrchestrator:
             }
         except Exception as e:
             self._job_repo.update_status(job_id, "failed", error=str(e))
+            # Audit: unexpected failure (non-fatal)
+            self._audit_event(
+                entity_type=EntityType.PIPELINE_BATCH,
+                entity_id=job_id,
+                action=Action.FAIL,
+                message=f"Pipeline unexpected error for {raw_file_id}: {e}",
+            )
             return {
                 "raw_file_id": raw_file_id,
                 "job_id": job_id,
@@ -310,3 +355,34 @@ class GeospatialOrchestrator:
             roi_config["path"] = roi_path
 
         return {"roi": roi_config}
+
+    def _audit_event(
+        self,
+        entity_type: EntityType,
+        entity_id: str,
+        action: Action,
+        message: str,
+    ) -> None:
+        """Log an audit event (non-fatal — failures are caught and logged).
+
+        Args:
+            entity_type: Type of entity being audited.
+            entity_id: ID of the entity.
+            action: Action performed.
+            message: Human-readable description.
+        """
+        if self._audit_repo is None:
+            return
+
+        try:
+            self._audit_repo.log_event(
+                AuditLog(
+                    entity_type=entity_type.value,
+                    entity_id=entity_id,
+                    action=action.value,
+                    actor_type=ActorType.SYSTEM.value,
+                    message=message,
+                )
+            )
+        except Exception as e:
+            logger.warning(f"Audit log failed (non-fatal): {e}")
