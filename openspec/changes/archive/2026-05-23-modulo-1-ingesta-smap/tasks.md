@@ -7,7 +7,7 @@
 | Estimated changed lines | ~650-750 lines |
 | 400-line budget risk | Medium |
 | Chained PRs recommended | No |
-| Suggested split | Slice 1 first (core PR), Slice 2 (PostgreSQL) como cambio separado posterior |
+| Suggested split | Slice 1 first (core PR), Slice 2 (PostgreSQL) as cambio separado posterior |
 | Delivery strategy | single-pr (para Slice 1); Slice 2 es un cambio independiente post-verificación |
 | Chain strategy | size:exception (800-line budget accepted) |
 

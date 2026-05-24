@@ -2,7 +2,7 @@
 """Migrate metadata from JSON files (Slice 1) to PostgreSQL (Slice 2).
 
 Reads all job metadata JSON files from data/metadata/ and inserts
-them into the PostgreSQL tables.
+them into the PostgreSQL tables using direct SQL.
 
 Usage:
     python scripts/migrate_metadata_to_pg.py
@@ -14,11 +14,12 @@ Requires:
 """
 
 import json
-import os
-import sys
+from datetime import datetime
 from pathlib import Path
 
 # Add project root to path
+import sys
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.storage.metadata_repository_pg import PostgreSQLMetadataRepository
@@ -28,14 +29,14 @@ def migrate_all():
     """Migrate all JSON metadata files to PostgreSQL."""
     metadata_dir = Path("data/metadata")
     if not metadata_dir.exists():
-        print("❌ data/metadata/ not found. No JSON files to migrate.")
+        print("[SKIP] data/metadata/ not found. No JSON files to migrate.")
         return
 
     repo = PostgreSQLMetadataRepository()
     json_files = sorted(metadata_dir.glob("*.json"))
 
     if not json_files:
-        print("📂 No JSON metadata files found in data/metadata/.")
+        print("[SKIP] No JSON metadata files found in data/metadata/.")
         return
 
     # Ensure SMAP source exists
@@ -53,7 +54,7 @@ def migrate_all():
             "variables": ["sm_surface", "sm_rootzone"],
         },
     )
-    print(f"✅ Source 'smap' ready (id={source_id})")
+    print(f"[OK] Source 'smap' ready (id={source_id})")
 
     # Ensure dataset exists
     dataset_id = repo.ensure_dataset(
@@ -63,59 +64,84 @@ def migrate_all():
         format="HDF5",
         variables=["sm_surface", "sm_rootzone"],
     )
-    print(f"✅ Dataset 'SPL4SMGP.008' ready (id={dataset_id})")
+    print(f"[OK] Dataset 'SPL4SMGP.008' ready (id={dataset_id})")
 
     total_files = 0
+    conn = repo.conn
+
     for json_path in json_files:
         with open(json_path) as f:
             data = json.load(f)
 
-        job_data = data.get("job", {})
-        raw_files = data.get("raw_files", [])
+        now = datetime.now()
 
-        # Build IngestionJob from JSON
-        from src.models.job_models import IngestionJob, JobState
-
-        job = IngestionJob(
-            job_id=job_data.get("job_id", json_path.stem),
-            source_id=source_id,
-            dataset_id=dataset_id,
-            region_id=job_data.get("region_id"),
-            date_from=job_data.get("date_from", ""),
-            date_to=job_data.get("date_to", ""),
-            bbox=job_data.get("bbox", [0, 0, 0, 0]),
-            state=JobState(job_data.get("state", "pending")),
-            ready_for_etl=job_data.get("ready_for_etl", False),
-            search_only=job_data.get("search_only", False),
-            error_message=job_data.get("error_message"),
-            started_at=job_data.get("started_at"),
-            finished_at=job_data.get("finished_at"),
-        )
-        repo.save_job(job)
-
-        for rf_data in raw_files:
-            from src.models.job_models import RawFile, RawFileStatus
-
-            raw_file = RawFile(
-                granule_id=rf_data.get("granule_id", ""),
-                source_product_id=rf_data.get("source_product_id", "SPL4SMGP.008"),
-                remote_url=rf_data.get("remote_url", ""),
-                acquisition_date=rf_data.get("acquisition_date", ""),
-                file_name=rf_data.get("file_name", ""),
-                size_bytes=rf_data.get("size_bytes", 0),
-                checksum_sha256=rf_data.get("checksum_sha256", ""),
-                file_path=rf_data.get("file_path", ""),
-                status=RawFileStatus(rf_data.get("status", "downloaded")),
-                ready_for_etl=rf_data.get("ready_for_etl", False),
-                error_message=rf_data.get("error_message"),
+        # Insert ingestion job directly (IngestionJob model uses source str, not source_id)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO ingestion_jobs (
+                    id, source_id, dataset_id, date_from, date_to,
+                    bbox, status, ready_for_etl, search_only, error_message,
+                    created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    ready_for_etl = EXCLUDED.ready_for_etl
+                """,
+                (
+                    data.get("job_id", json_path.stem),
+                    source_id,
+                    dataset_id,
+                    data.get("start_date"),
+                    data.get("end_date"),
+                    data.get("bbox", [0, 0, 0, 0]),
+                    data.get("state", "pending"),
+                    data.get("ready_for_etl", False),
+                    data.get("search_only", False),
+                    data.get("error_message"),
+                    now,
+                ),
             )
-            repo.save_file(raw_file, job.job_id)
+
+        # Insert raw files
+        job_files = 0
+        for rf_data in data.get("files", []):
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO raw_files (
+                        ingestion_job_id, source_id, dataset_id, granule_id,
+                        source_product_id, remote_url, acquisition_date,
+                        file_path, file_name, file_format, size_bytes,
+                        checksum_sha256, status, error_message, ready_for_etl
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        data.get("job_id", json_path.stem),
+                        source_id,
+                        dataset_id,
+                        rf_data.get("granule_id", ""),
+                        rf_data.get("source_product_id", "SPL4SMGP.008"),
+                        rf_data.get("remote_url", ""),
+                        rf_data.get("acquisition_date"),
+                        rf_data.get("file_path", ""),
+                        rf_data.get("file_name", ""),
+                        "HDF5",
+                        rf_data.get("size_bytes", 0),
+                        rf_data.get("checksum_sha256", ""),
+                        rf_data.get("status", "downloaded"),
+                        rf_data.get("error_message"),
+                        rf_data.get("ready_for_etl", False),
+                    ),
+                )
+            job_files += 1
             total_files += 1
 
-        print(f"  ✅ {json_path.name}: {len(raw_files)} files migrated")
+        conn.commit()
+        print(f"  [OK] {json_path.name}: {job_files} file(s) migrated")
 
     repo.close()
-    print(f"\n🎉 Migration complete: {len(json_files)} jobs, {total_files} files.")
+    print(f"\n[DONE] Migration complete: {len(json_files)} jobs, {total_files} files.")
 
 
 if __name__ == "__main__":
