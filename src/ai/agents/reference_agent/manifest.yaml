@@ -1,0 +1,32 @@
+# Reference Agent Manifest
+# type: reference — this agent is a fixture for validating the runtime,
+# not a domain-specific agent. It has no specialized logic.
+name: reference-agent
+version: 1.0.0
+entry_point: agent:ReferenceAgent
+description: Minimal reference agent for testing runtime loading and execution
+type: reference
+
+tools:
+  - geospatial_query
+  - indicator_lookup
+
+limits:
+  max_steps: 10
+  max_tokens: 4096
+  timeout_seconds: 30
+
+output_schema:
+  type: object
+  required:
+    - conclusion
+    - confidence
+  properties:
+    conclusion:
+      type: string
+      description: Summary conclusion from the agent
+    confidence:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Confidence score (0-1)
