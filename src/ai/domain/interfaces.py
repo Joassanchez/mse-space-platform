@@ -78,6 +78,33 @@ class ContextEngine(ABC):
         pass
 
     @abstractmethod
+    def build_enriched_context(
+        self,
+        region_ids: list[int],
+        indicator_codes: list[str] | None = None,
+        max_age_hours: int | None = None,
+        include_weather: bool = True,
+        include_socioeconomic: bool = True,
+    ) -> dict:
+        """Build enriched context with weather and socioeconomic data.
+
+        Extends build_context() with optional weather snapshots and
+        socioeconomic indicators (Módulo 6 — Data Connectors).
+
+        Args:
+            region_ids: List of region IDs to include in context.
+            indicator_codes: Optional filter by indicator codes.
+            max_age_hours: Optional staleness threshold.
+            include_weather: If True, attach latest weather per region.
+            include_socioeconomic: If True, attach ECO_* indicators.
+
+        Returns:
+            Enriched context dict with optional "weather" and
+            "socioeconomic" keys.
+        """
+        pass
+
+    @abstractmethod
     def summarize_context(self, context: dict, max_tokens: int) -> dict:
         """Summarize context to fit token window.
 

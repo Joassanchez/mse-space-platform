@@ -1,0 +1,31 @@
+# Executive Summary Agent — AGENT-ALT-EX-001
+# Synthesises all alert outputs into a brief executive report.
+# Stateless, template-based, no LLM calls.
+
+name: executive_summary
+version: 1.0.0
+entry_point: agent:ExecutiveSummaryAgent
+description: Synthesises alert information into an executive report
+type: alerts
+
+output_schema:
+  type: object
+  required:
+    - executive_summary
+    - confidence_score
+    - natural_language_output
+  properties:
+    executive_summary:
+      type: string
+    situation:
+      type: string
+    risk:
+      type: string
+    actions:
+      type: string
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+    natural_language_output:
+      type: string

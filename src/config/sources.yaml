@@ -9,3 +9,18 @@ sources:
     format: "HDF5"
     provider: "NASA Earthdata / NSIDC"
 
+  openweather:
+    api_url: "https://api.openweathermap.org/data/3.0/onecall"
+    units: "metric"
+    description: "OpenWeather One Call API 3.0"
+    provider: "OpenWeather"
+    notes: "API key via OPENWEATHER_API_KEY env var"
+
+  indec:
+    api_url: "https://apis.datos.gob.ar/series/api/series"
+    format: "JSON / CSV"
+    description: "INDEC socioeconomic indicators"
+    provider: "INDEC (Instituto Nacional de Estadística y Censos)"
+    status: "design-only"
+    notes: "MVP uses seeds/003_socioeconomic_demo.sql instead"
+

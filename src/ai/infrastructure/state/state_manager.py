@@ -14,7 +14,7 @@ Idempotency:
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 import psycopg2
 import psycopg2.extras
@@ -259,6 +259,83 @@ class StateManagerImpl(StateManager):
             trace_id = cur.fetchone()[0]
             conn.commit()
         return trace_id
+
+    def persist_agent_execution(
+        self,
+        agent_code: str,
+        orchestrator_area: str,
+        workflow_id: str,
+        context_payload: Optional[dict] = None,
+        structured_output: Optional[dict] = None,
+        natural_language_output: Optional[str] = None,
+        confidence_score: float = 0.0,
+        data_completeness: float = 0.0,
+        llm_model_used: Optional[str] = None,
+        started_at: Optional[str] = None,
+        finished_at: Optional[str] = None,
+        error_message: Optional[str] = None,
+        status: str = "pending",
+    ) -> str:
+        """Persist an agent execution record to the agent_executions table.
+
+        Used by area orchestrators to record individual agent runs with
+        their outputs, confidence, and data completeness for analytics
+        and audit trails. Returns UUID string per PRD §11.
+
+        Args:
+            agent_code: Agent identifier (e.g. "AGENT-HYD-SM-001").
+            orchestrator_area: Area that orchestrated this execution.
+            workflow_id: Parent workflow run ID.
+            context_payload: JSON context passed to the agent.
+            structured_output: JSON structured output from the agent.
+            natural_language_output: Template-based NL summary.
+            confidence_score: Execution confidence (0.0-1.0).
+            data_completeness: Data completeness fraction (0.0-1.0).
+            llm_model_used: LiteLLM model identifier (if LLM was used).
+            started_at: ISO timestamp when execution started.
+            finished_at: ISO timestamp when execution finished.
+            error_message: Error text if execution failed.
+            status: Lifecycle status (pending, running, completed, failed).
+
+        Returns:
+            UUID string of the persisted execution record.
+        """
+        conn = self._get_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO agent_executions (
+                    agent_code, orchestrator_area, workflow_id,
+                    context_payload, structured_output, natural_language_output,
+                    confidence_score, data_completeness, llm_model_used,
+                    started_at, finished_at, error_message, status
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    agent_code,
+                    orchestrator_area,
+                    workflow_id,
+                    json.dumps(context_payload) if context_payload else None,
+                    json.dumps(structured_output) if structured_output else None,
+                    natural_language_output,
+                    confidence_score,
+                    data_completeness,
+                    llm_model_used,
+                    started_at,
+                    finished_at,
+                    error_message,
+                    status,
+                ),
+            )
+            raw_id = cur.fetchone()[0]
+            conn.commit()
+        execution_id = str(raw_id)
+        logger.debug(
+            f"Agent execution persisted: id={execution_id}, "
+            f"agent={agent_code}, area={orchestrator_area}"
+        )
+        return execution_id
 
     def close(self) -> None:
         """Close the database connection."""

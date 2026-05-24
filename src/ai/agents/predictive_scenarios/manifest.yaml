@@ -1,0 +1,38 @@
+# Predictive Scenarios Agent — AGENT-RISK-SC-001
+# Projects probable, pessimistic, and optimistic scenarios at 7/30/90 day horizons.
+# Stateless, template-based, no LLM calls.
+
+name: predictive_scenarios
+version: 1.0.0
+entry_point: agent:PredictiveScenariosAgent
+description: Projects risk scenarios at 7, 30, and 90 day horizons
+type: risk
+
+tools: []
+
+limits:
+  max_steps: 3
+  max_tokens: 2048
+  timeout_seconds: 15
+
+output_schema:
+  type: object
+  required:
+    - scenarios
+    - confidence_score
+    - data_completeness
+    - natural_language_output
+  properties:
+    scenarios:
+      type: array
+      description: List of scenario projections
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+    data_completeness:
+      type: number
+      minimum: 0
+      maximum: 1
+    natural_language_output:
+      type: string

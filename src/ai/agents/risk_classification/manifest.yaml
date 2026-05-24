@@ -1,0 +1,53 @@
+# Risk Classification Agent — AGENT-RISK-CL-001
+# Assigns risk level based on hydric condition, historical risk, land use, infrastructure.
+# Stateless, template-based, no LLM calls.
+
+name: risk_classification
+version: 1.0.0
+entry_point: agent:RiskClassificationAgent
+description: Assigns risk level based on hydric-environmental condition and territorial variables
+type: risk
+
+tools: []
+
+limits:
+  max_steps: 3
+  max_tokens: 2048
+  timeout_seconds: 15
+
+output_schema:
+  type: object
+  required:
+    - risk_level
+    - risk_score
+    - confidence_score
+    - data_completeness
+    - natural_language_output
+  properties:
+    risk_level:
+      type: string
+      enum: [low, moderate, high, critical]
+      description: Assigned risk level
+    risk_score:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Numeric risk score (0-1)
+    contributing_factors:
+      type: array
+      items:
+        type: string
+      description: Factors contributing to the risk level
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Execution confidence (0-1)
+    data_completeness:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Fraction of expected indicators found (0-1)
+    natural_language_output:
+      type: string
+      description: Template-based natural language summary

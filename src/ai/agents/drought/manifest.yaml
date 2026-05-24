@@ -1,0 +1,71 @@
+# Drought Agent — AGENT-HYD-DR-001
+# Monitors drought conditions using SPI (Standardized Precipitation Index)
+# and soil moisture indicators. Stateless, template-based, no LLM calls.
+
+name: drought
+version: 1.0.0
+entry_point: agent:DroughtAgent
+description: Drought monitoring using SPI (Standardized Precipitation Index) and soil moisture
+type: hydric-environmental
+
+tools: []
+
+limits:
+  max_steps: 3
+  max_tokens: 2048
+  timeout_seconds: 15
+
+output_schema:
+  type: object
+  required:
+    - drought_category
+    - drought_signal
+    - spi_status
+    - trend
+    - confidence_score
+    - data_completeness
+    - natural_language_output
+  properties:
+    spi_30d:
+      type: number
+      description: Standardized Precipitation Index at 30-day scale
+    spi_90d:
+      type: number
+      description: Standardized Precipitation Index at 90-day scale
+    spi_status:
+      type: string
+      enum: [normal, moderate_drought, severe_drought, extreme_drought]
+      description: SPI-based moisture status per USDA D0-D4 standard
+    drought_category:
+      type: string
+      enum: [none, mild, moderate, severe, extreme]
+      description: Drought severity category from SPI thresholds
+    drought_signal:
+      type: string
+      enum: [none, mild, moderate, severe]
+      description: Actionable drought signal for orchestrator
+    duration_weeks:
+      type: integer
+      description: Estimated drought duration in weeks
+    spatial_extent_pct:
+      type: number
+      minimum: 0
+      maximum: 100
+      description: Percent of area affected by drought conditions
+    trend:
+      type: string
+      enum: [improving, stable, worsening]
+      description: Drought trend direction
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Execution confidence (0-1)
+    data_completeness:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Fraction of expected indicators found (0-1)
+    natural_language_output:
+      type: string
+      description: Template-based natural language summary

@@ -1,0 +1,44 @@
+# Alert Classification Agent — AGENT-ALT-CL-001
+# Classifies severity, event type, and affected zones from hydric + risk output.
+# Stateless, template-based, no LLM calls.
+
+name: alert_classification
+version: 1.0.0
+entry_point: agent:AlertClassificationAgent
+description: Classifies alert severity, event type, and affected zones
+type: alerts
+
+tools: []
+
+limits:
+  max_steps: 3
+  max_tokens: 2048
+  timeout_seconds: 15
+
+output_schema:
+  type: object
+  required:
+    - severity
+    - event_type
+    - confidence_score
+    - data_completeness
+    - natural_language_output
+  properties:
+    severity:
+      type: string
+      enum: [info, warning, alert, critical]
+    event_type:
+      type: string
+      enum: [drought, flood, soil_moisture, weather_anomaly, risk_escalation, economic_impact]
+    affected_zones:
+      type: array
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+    data_completeness:
+      type: number
+      minimum: 0
+      maximum: 1
+    natural_language_output:
+      type: string

@@ -1,0 +1,43 @@
+# Territorial Prioritization Agent — AGENT-RISK-PR-001
+# Identifies priority zones based on risk + exposure + vulnerability.
+# Stateless, template-based, no LLM calls.
+
+name: territorial_prioritization
+version: 1.0.0
+entry_point: agent:TerritorialPrioritizationAgent
+description: Identifies priority zones based on risk level, exposure, and vulnerability
+type: risk
+
+tools: []
+
+limits:
+  max_steps: 3
+  max_tokens: 2048
+  timeout_seconds: 15
+
+output_schema:
+  type: object
+  required:
+    - priority_zones
+    - confidence_score
+    - data_completeness
+    - natural_language_output
+  properties:
+    priority_zones:
+      type: array
+      description: Prioritized list of affected zones with scores
+    ranking:
+      type: array
+      items:
+        type: string
+      description: Ordered ranking of zone identifiers
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+    data_completeness:
+      type: number
+      minimum: 0
+      maximum: 1
+    natural_language_output:
+      type: string

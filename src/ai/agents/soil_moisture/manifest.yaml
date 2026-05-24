@@ -1,0 +1,68 @@
+# Soil Moisture Agent — AGENT-HYD-SM-001
+# Analyzes soil moisture from SMAP satellite data (surface + rootzone).
+# Stateless, template-based, no LLM calls.
+
+name: soil_moisture
+version: 1.0.0
+entry_point: agent:SoilMoistureAgent
+description: Soil moisture analysis from SMAP satellite data
+type: hydric-environmental
+
+tools: []
+
+limits:
+  max_steps: 3
+  max_tokens: 2048
+  timeout_seconds: 15
+
+output_schema:
+  type: object
+  required:
+    - surface_moisture
+    - rootzone_moisture
+    - sm_surface_status
+    - sm_rootzone_status
+    - trend_7d
+    - anomaly_pct
+    - confidence_score
+    - data_completeness
+    - natural_language_output
+  properties:
+    surface_moisture:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Surface soil moisture (m3/m3, 0-5cm depth)
+    rootzone_moisture:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Rootzone soil moisture (m3/m3, 0-100cm depth)
+    sm_surface_status:
+      type: string
+      enum: [normal, dry, wet, critical_dry, critical_wet, unavailable]
+      description: Surface moisture classification
+    sm_rootzone_status:
+      type: string
+      enum: [normal, dry, wet, critical_dry, critical_wet, unavailable]
+      description: Rootzone moisture classification
+    trend_7d:
+      type: string
+      enum: [stable, increasing, decreasing]
+      description: 7-day trend direction
+    anomaly_pct:
+      type: number
+      description: Percent deviation from historical average
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Execution confidence (0-1)
+    data_completeness:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Fraction of expected indicators found (0-1)
+    natural_language_output:
+      type: string
+      description: Template-based natural language summary

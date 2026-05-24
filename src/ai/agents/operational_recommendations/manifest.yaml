@@ -1,0 +1,27 @@
+# Operational Recommendations Agent — AGENT-ALT-REC-001
+# Suggests concrete actions based on event type and severity.
+# Best practices stored in prompts/templates.py.
+
+name: operational_recommendations
+version: 1.0.0
+entry_point: agent:OperationalRecommendationsAgent
+description: Suggests operational actions prioritized by urgency
+type: alerts
+
+output_schema:
+  type: object
+  required:
+    - recommended_actions
+    - confidence_score
+    - natural_language_output
+  properties:
+    recommended_actions:
+      type: array
+      items:
+        type: object
+    confidence_score:
+      type: number
+    data_completeness:
+      type: number
+    natural_language_output:
+      type: string

@@ -1,0 +1,71 @@
+# Weather Agent — AGENT-HYD-MET-001
+# Analyzes climate and weather data for hydric-environmental assessment.
+# Stateless, template-based, no LLM calls.
+
+name: weather
+version: 1.0.0
+entry_point: agent:WeatherAgent
+description: Climate and weather data analysis for hydric-environmental assessment
+type: hydric-environmental
+
+tools: []
+
+limits:
+  max_steps: 3
+  max_tokens: 2048
+  timeout_seconds: 15
+
+output_schema:
+  type: object
+  required:
+    - rainfall_30d_mm
+    - rainfall_anomaly_pct
+    - condition
+    - confidence_score
+    - data_completeness
+    - natural_language_output
+  properties:
+    rainfall_30d_mm:
+      type: number
+      description: Accumulated rainfall over last 30 days (mm)
+    rainfall_7d_mm:
+      type: number
+      description: Accumulated rainfall over last 7 days (mm)
+    rainfall_anomaly_pct:
+      type: number
+      description: Percent deviation from historical average
+    condition:
+      type: string
+      enum: [far_below, below_average, average, above_average, far_above, unavailable]
+      description: Rainfall condition classification
+    temperature_anomaly:
+      type: number
+      description: Temperature deviation from average (°C)
+    temp_avg:
+      type: number
+      description: Average temperature (°C)
+    humidity:
+      type: number
+      minimum: 0
+      maximum: 100
+      description: Relative humidity (%)
+    wind_speed:
+      type: number
+      minimum: 0
+      description: Wind speed (m/s)
+    forecast_relevance:
+      type: number
+      description: Whether short-term forecast affects analysis (0-1)
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Execution confidence (0-1)
+    data_completeness:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: Fraction of expected indicators found (0-1)
+    natural_language_output:
+      type: string
+      description: Template-based natural language summary

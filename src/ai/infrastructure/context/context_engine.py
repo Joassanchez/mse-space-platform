@@ -18,6 +18,8 @@ from src.geospatial.domain.interfaces import (
 )
 from src.geospatial.domain.models import Indicator, ProcessedLayer, Region, RiskAssessment
 
+from src.weather.domain.interfaces import WeatherSnapshotRepository
+
 from src.ai.domain.errors import ContextError
 from src.ai.domain.interfaces import ContextEngine
 
@@ -45,6 +47,7 @@ class ContextEngineImpl(ContextEngine):
         layer_repo: ProcessedLayerRepository,
         indicator_repo: IndicatorRepository,
         risk_repo: RiskAssessmentRepository,
+        weather_repo: WeatherSnapshotRepository | None = None,
         max_layers: int = DEFAULT_MAX_LAYERS,
         max_indicators: int = DEFAULT_MAX_INDICATORS,
         max_risks: int = DEFAULT_MAX_RISKS,
@@ -56,6 +59,7 @@ class ContextEngineImpl(ContextEngine):
             layer_repo: Repository for reading processed geospatial layers.
             indicator_repo: Repository for reading indicator data.
             risk_repo: Repository for reading risk assessments.
+            weather_repo: Optional repository for weather snapshots (Módulo 6).
             max_layers: Maximum layers to include per region.
             max_indicators: Maximum indicators to include per region.
             max_risks: Maximum risk assessments to include per region.
@@ -64,6 +68,7 @@ class ContextEngineImpl(ContextEngine):
         self._layer_repo = layer_repo
         self._indicator_repo = indicator_repo
         self._risk_repo = risk_repo
+        self._weather_repo = weather_repo
         self._max_layers = max_layers
         self._max_indicators = max_indicators
         self._max_risks = max_risks
@@ -232,11 +237,90 @@ class ContextEngineImpl(ContextEngine):
         return summarized
 
     # ============================================================
+    # Enriched Context (Módulo 6 — Data Connectors)
+    # ============================================================
+
+    def build_enriched_context(
+        self,
+        region_ids: list[int],
+        indicator_codes: list[str] | None = None,
+        max_age_hours: int | None = None,
+        include_weather: bool = True,
+        include_socioeconomic: bool = True,
+    ) -> dict:
+        """Build enriched context with weather and socioeconomic data.
+
+        Extends build_context() with optional weather snapshots and
+        socioeconomic demo/reference indicators. All data is read-only
+        via repository interfaces.
+
+        Args:
+            region_ids: Regions to include.
+            indicator_codes: Optional filter for indicators.
+            max_age_hours: Optional staleness threshold.
+            include_weather: If True, attach latest weather per region.
+            include_socioeconomic: If True, attach ECO_* indicators.
+
+        Returns:
+            Enriched context dict with optional "weather" and
+            "socioeconomic" keys alongside standard context fields.
+        """
+        ctx = self.build_context(region_ids, indicator_codes, max_age_hours)
+
+        # Attach weather data per region
+        if include_weather and self._weather_repo:
+            weather_data = []
+            for rid in region_ids:
+                snap = self._weather_repo.find_latest_by_region(rid)
+                if snap:
+                    weather_data.append({
+                        "region_id": snap.region_id,
+                        "observed_at": snap.observed_at,
+                        "temp_celsius": snap.temp_celsius,
+                        "humidity_pct": snap.humidity_pct,
+                        "wind_speed_ms": snap.wind_speed_ms,
+                        "rainfall_mm": snap.rainfall_mm,
+                        "pressure_hpa": snap.pressure_hpa,
+                        "condition": snap.weather_condition,
+                        "source": snap.source,
+                    })
+            ctx["weather"] = weather_data
+            if not weather_data:
+                ctx.setdefault("warnings", []).append(
+                    "weather_data: no snapshots found for requested regions"
+                )
+
+        # Attach socioeconomic demo/reference indicators
+        if include_socioeconomic:
+            eco_codes = {
+                "ECO_CROP_YIELD", "ECO_AFFECTED_AREA", "ECO_ESTIMATED_LOSS",
+                "ECO_COMMODITY_PRICE", "ECO_POP_DENSITY",
+            }
+            all_indicators = ctx.get("indicators", [])
+            socioeconomic = [
+                ind for ind in all_indicators
+                if ind.get("indicator_code", "").upper() in eco_codes
+            ]
+            if socioeconomic:
+                ctx["socioeconomic"] = socioeconomic
+                ctx.setdefault("warnings", []).append(
+                    "socioeconomic_data: includes DEMO/reference indicators — "
+                    "not actual INDEC data"
+                )
+
+        return ctx
+
+    # ============================================================
     # Private helpers
     # ============================================================
 
     def _summarize_region(self, region: Region) -> dict:
-        """Extract relevant fields from a region for context."""
+        """Extract relevant fields from a region for context.
+
+        Includes metadata JSONB for territorial variables (land_use,
+        population_density, critical_infrastructure) consumed by
+        the Risk Orchestrator (§6).
+        """
         return {
             "id": region.id,
             "name": region.name,
@@ -245,6 +329,7 @@ class ContextEngineImpl(ContextEngine):
             "province": region.province,
             "bbox": region.bbox,
             "area_km2": region.area_km2,
+            "metadata": region.metadata,
         }
 
     def _summarize_indicator(self, indicator: Indicator) -> dict:

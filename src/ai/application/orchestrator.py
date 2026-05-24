@@ -138,6 +138,7 @@ class LangGraphOrchestrator:
         agent_manifests: list[AgentManifest],
         indicator_codes: Optional[list[str]] = None,
         workflow_id: Optional[str] = None,
+        context: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         """Execute a complete AI workflow.
 
@@ -149,6 +150,8 @@ class LangGraphOrchestrator:
             agent_manifests: Agent manifests to execute.
             indicator_codes: Optional indicator filter for context.
             workflow_id: Optional explicit workflow ID (generated if None).
+            context: Optional pre-built context (area orchestrators).
+                If provided and non-empty, the build_context node is skipped.
 
         Returns:
             Final workflow result dict with consolidated response.
@@ -163,7 +166,7 @@ class LangGraphOrchestrator:
             "workflow_id": wid,
             "region_ids": region_ids,
             "indicator_codes": indicator_codes,
-            "context": {},
+            "context": context if context else {},
             "agent_manifests": [
                 self._manifest_to_dict(m) for m in agent_manifests
             ],
@@ -211,12 +214,28 @@ class LangGraphOrchestrator:
         Reads regions, indicators, and risk assessments via the
         Context Engine (read-only).
 
+        M5 backward-compatibility guard: skips context building if
+        pre-built context was already provided by an area orchestrator.
+
         Args:
             state: Current workflow state.
 
         Returns:
             Updated state with context populated.
         """
+        # M5 guard: skip if pre-built context was provided (area orchestrators)
+        ctx = state.get("context")
+        if ctx and len(ctx) > 0:
+            logger.info(
+                f"Workflow {state['workflow_id']}: using pre-built context, "
+                f"skipping build_context node"
+            )
+            state["messages"].append(
+                f"Skipped build_context: using pre-built context "
+                f"({len(ctx.get('regions', []))} regions)"
+            )
+            return state
+
         logger.info(
             f"Workflow {state['workflow_id']}: building context "
             f"for regions {state['region_ids']}"

@@ -1,0 +1,26 @@
+# Risk Communication Agent — AGENT-ALT-COM-001
+# Generates differentiated messages per audience type.
+# Stateless, template-based, no LLM calls.
+
+name: risk_communication
+version: 1.0.0
+entry_point: agent:RiskCommunicationAgent
+description: Generates alert messages differentiated by target audience
+type: alerts
+
+output_schema:
+  type: object
+  required:
+    - messages
+    - confidence_score
+    - natural_language_output
+  properties:
+    messages:
+      type: object
+      description: Messages keyed by audience type
+    confidence_score:
+      type: number
+      minimum: 0
+      maximum: 1
+    natural_language_output:
+      type: string
