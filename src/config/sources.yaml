@@ -3,8 +3,22 @@ sources:
     product_id: "SPL4SMGP.008"
     short_name: "SPL4SMGP"
     version: "008"
-    bbox: [-58.5, -35.0, -58.0, -34.5]  # Default: Buenos Aires pilot region
+    bbox: [-65.5, -34.8, -62.0, -30.0]  # Default: Córdoba pilot region
     max_days_range: 7
     description: "SMAP Level 4 Surface and Root Zone Soil Moisture"
     format: "HDF5"
     provider: "NASA Earthdata / NSIDC"
+
+geospatial:
+  variables:
+    - name: "sm_surface"
+      path: "Geophysical_Data/sm_surface"
+      display_name: "Surface Soil Moisture"
+      units: "m3 m-3"
+      expected_min: 0.0
+      expected_max: 0.9
+  roi:
+    enabled: true
+    path: "data/config/roi_cordoba.geojson"  # Default ROI GeoJSON path — Córdoba pilot region
+  nodata_value: -9999.0
+  processing_version: "v1"

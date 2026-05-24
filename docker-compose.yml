@@ -18,14 +18,32 @@ services:
 
   ingestion:
     build: .
-    image: mse-ingestion:latest
+    image: mse-platform:latest
     environment:
       EARTHDATA_USERNAME: ${EARTHDATA_USERNAME}
       EARTHDATA_PASSWORD: ${EARTHDATA_PASSWORD}
       MAX_DAYS_RANGE: ${MAX_DAYS_RANGE:-7}
     volumes:
-      - ingestion-data:/app/data
+      - platform-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  geospatial:
+    build: .
+    image: mse-platform:latest
+    command: ["geospatial"]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: mse_platform
+      PGUSER: mse_user
+      PGPASSWORD: mse_pass
+    volumes:
+      - platform-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   pgdata:
-  ingestion-data:
+  platform-data:
