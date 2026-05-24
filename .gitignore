@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+*.env.local
+
+# Data (already ignored by data/.gitignore, but also at root level)
+data/raw/
+data/processed/
+
+# Test artifacts
+.pytest_cache/

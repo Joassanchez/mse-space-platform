@@ -1,0 +1,63 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Project: mse-space-platform — Plataforma Inteligente de Gestión Hídrica y Riesgo Agroambiental
+  Stack: Python (greenfield, no dependency files yet)
+  Arch: Hexagonal/clean — ingestion connector pattern (see PRD-modulo1.md)
+  Domain: Geospatial water & agricultural risk management
+  Module 1: SMAP data ingestion (earthaccess, h5py, xarray, pandas, numpy)
+  Storage: PostgreSQL + PostGIS via Docker Compose
+  Repo: https://github.com/Joassanchez/mse-space-platform.git
+
+strict_tdd: false
+explanation: |
+  Strict TDD is disabled — Python test runner not yet configured (greenfield project).
+  Once pytest or equivalent is installed and configured, set strict_tdd: true.
+
+testing:
+  runner:
+    available: false
+    framework: null
+    command: null
+  layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage:
+    available: false
+    command: null
+  quality:
+    linter: false
+    type_checker: false
+    formatter: false
+
+rules:
+  proposal:
+    - Frame every proposal against PRD-modulo1 requirements (RF-01 through RF-08)
+    - Include extensibility impact for future sources (SAOCOM, NISAR, SMN, INDEC)
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Trace each spec item to PRD functional requirements
+  design:
+    - Follow the base connector pattern from PRD architecture
+    - Document storage decisions (raw vs processed separation)
+    - Include sequence diagrams for complex flows
+    - Never hardcode credentials; use env vars or .netrc
+  tasks:
+    - Group by layer: config, connector, storage, jobs, tests
+    - Keep tasks completable in one session
+    - Include test setup tasks even without test runner (prepare for when pytest arrives)
+  apply:
+    - Follow existing code patterns (no style guide yet — establish one)
+    - Keep data/raw writes immutable (never modify downloaded files)
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+    - Verify archived change aligns with PRD acceptance criteria
