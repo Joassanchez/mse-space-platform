@@ -31,6 +31,16 @@ from src.geospatial.domain.models import (
     ProcessedLayer,
 )
 
+try:
+    from shapely.geometry import Polygon
+    import pyproj
+    from shapely.ops import transform as shapely_transform
+    HAS_SPATIAL = True
+except ImportError:
+    HAS_SPATIAL = False
+    Polygon = None
+    pyproj = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -238,6 +248,11 @@ class GeospatialOrchestrator:
 
             # Step 8: Persist layer
             stats = raster_result.statistics
+            data_source_id = raw_file.get("source_id")
+            footprint = self._build_footprint_geometry(
+                raster_result.metadata.bounds,
+                raster_result.metadata.crs
+            )
             layer = ProcessedLayer(
                 raw_file_id=raw_file_id,
                 processing_job_id=job_id,
@@ -258,6 +273,8 @@ class GeospatialOrchestrator:
                 nodata_pixel_count=stats.get("nodata_pixel_count", 0),
                 acquisition_date=extracted.acquisition_date,
                 processing_version=processing_version,
+                data_source_id=data_source_id,
+                footprint_geometry=footprint,
             )
             self._layer_repo.insert(layer)
 
@@ -335,6 +352,43 @@ class GeospatialOrchestrator:
                 "status": "failed",
                 "error": f"Unexpected error: {e}",
             }
+
+    def _build_footprint_geometry(
+        self,
+        bounds: tuple[float, float, float, float] | None,
+        crs: str | None,
+    ) -> Any | None:
+        """Build a footprint Polygon in EPSG:4326 from raster bounds and CRS.
+        
+        Args:
+            bounds: (minx, miny, maxx, maxy) in native CRS coordinates.
+            crs: Native CRS string (e.g. "EPSG:6933").
+        
+        Returns:
+            Shapely Polygon in EPSG:4326, or None if transformation is not possible.
+        """
+        if not HAS_SPATIAL or not bounds or not crs:
+            return None
+        
+        try:
+            # Create polygon from bbox corners
+            minx, miny, maxx, maxy = bounds
+            poly = Polygon([
+                (minx, miny), (minx, maxy), (maxx, maxy), (maxx, miny), (minx, miny)
+            ])
+            
+            # No transformation needed if already EPSG:4326
+            if crs.upper() in ("EPSG:4326", "WGS84", "GCS_WGS_1984"):
+                return poly
+            
+            # Transform to EPSG:4326
+            transformer = pyproj.Transformer.from_crs(crs, "EPSG:4326", always_xy=True)
+            return shapely_transform(
+                lambda x, y: transformer.transform(x, y), poly
+            )
+        except Exception:
+            logger.warning(f"Could not build footprint_geometry for CRS {crs}")
+            return None
 
     def _build_processing_config(
         self,

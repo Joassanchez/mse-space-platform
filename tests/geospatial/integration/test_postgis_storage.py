@@ -132,8 +132,15 @@ class TestPostGISVersion:
 class TestRegionRepository:
     """Integration tests for RegionRepositoryImpl."""
 
-    def test_insert_and_get_region(self, region_repo):
+    def test_insert_and_get_region(self, region_repo, db_conn):
         """Insert a region with MultiPolygon geometry, then retrieve it."""
+        # Clean up any leftover data from previous runs
+        with db_conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM regions WHERE name = 'Test Region Integration' AND country = 'Argentina' AND province = 'Formosa'"
+            )
+            db_conn.commit()
+
         geometry = shapely.geometry.MultiPolygon([
             shapely.geometry.Polygon([
                 (-60.0, -25.0), (-60.0, -24.0),

@@ -96,6 +96,13 @@ Examples:
         default=None,
         help="Path to sources.yaml configuration file",
     )
+    parser.add_argument(
+        "--metadata-backend",
+        type=str,
+        default="json",
+        choices=["json", "postgresql"],
+        help="Metadata storage backend: json (default, local file) or postgresql (production, requires PostgreSQL)",
+    )
 
     return parser.parse_args(argv)
 
@@ -247,7 +254,11 @@ def main(argv: list[str] | None = None) -> int:
     # Initialize components
     connector = SmapConnector(max_days_range=max_days_range)
     metadata_repo = MetadataRepository()
-    job_manager = JobManager(connector=connector, metadata_repo=metadata_repo)
+    job_manager = JobManager(
+        connector=connector,
+        metadata_repo=metadata_repo,
+        metadata_backend=args.metadata_backend,
+    )
 
     # Run ingestion
     mode = "search-only" if args.search_only else "download"

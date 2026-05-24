@@ -372,7 +372,6 @@ class SMAPHDF5Reader(GeospatialReader):
         if y_coords.ndim == 2:
             y_1d = y_coords[:, 0]  # First column
         else:
-            y_coords = y_coords
             y_1d = y_coords
 
         # Ensure arrays are sorted (ascending for x, descending for y in raster convention)

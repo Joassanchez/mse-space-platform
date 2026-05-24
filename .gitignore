@@ -20,3 +20,6 @@ data/processed/
 
 # Test artifacts
 .pytest_cache/
+
+# AI agent artifacts
+*atl/

@@ -8,9 +8,7 @@ from datetime import datetime
 
 from src.geospatial.domain.interfaces import AuditRepository
 from src.geospatial.domain.models import AuditLog
-from src.geospatial.infrastructure.persistence.postgres_repositories import (
-    _get_connection,
-)
+from src.geospatial.infrastructure.persistence.connection import get_connection
 
 try:
     import psycopg2
@@ -40,7 +38,7 @@ class AuditRepositoryImpl(AuditRepository):
     def conn(self):
         """Lazy connection property."""
         if self._conn is None or self._conn.closed:
-            self._conn = _get_connection()
+            self._conn = get_connection()
         return self._conn
 
     def log_event(self, audit_log: AuditLog) -> int:

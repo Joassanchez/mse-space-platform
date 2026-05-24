@@ -7,9 +7,7 @@ from typing import Any
 
 from src.geospatial.domain.interfaces import RegionRepository
 from src.geospatial.domain.models import Region
-from src.geospatial.infrastructure.persistence.postgres_repositories import (
-    _get_connection,
-)
+from src.geospatial.infrastructure.persistence.connection import get_connection
 
 try:
     import psycopg2
@@ -39,7 +37,7 @@ class RegionRepositoryImpl(RegionRepository):
     def conn(self):
         """Lazy connection property."""
         if self._conn is None or self._conn.closed:
-            self._conn = _get_connection()
+            self._conn = get_connection()
         return self._conn
 
     def save(self, region: Region) -> int:

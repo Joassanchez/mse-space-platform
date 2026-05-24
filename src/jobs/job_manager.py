@@ -36,15 +36,21 @@ class JobManager:
         self,
         connector: BaseIngestionConnector,
         metadata_repo: MetadataRepository | None = None,
+        metadata_backend: str = "json",
     ):
         """Initialize the job manager.
 
         Args:
             connector: The ingestion connector to use.
             metadata_repo: Metadata repository. Creates default if None.
+            metadata_backend: Backend for metadata storage: "json" (default) or "postgresql".
         """
         self.connector = connector
-        self.metadata_repo = metadata_repo or MetadataRepository()
+        if metadata_backend == "postgresql":
+            from src.storage.metadata_repository_pg import PostgreSQLMetadataRepository
+            self.metadata_repo = PostgreSQLMetadataRepository()
+        else:
+            self.metadata_repo = metadata_repo or MetadataRepository()
 
     def run_ingestion(
         self,

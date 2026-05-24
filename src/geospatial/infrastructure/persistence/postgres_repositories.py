@@ -25,29 +25,7 @@ try:
 except ImportError:
     HAS_PSYCOPG2 = False
 
-
-def _get_connection():
-    """Get a PostgreSQL connection from environment config.
-
-    Returns:
-        psycopg2 connection.
-
-    Raises:
-        RuntimeError: If psycopg2 is not installed.
-        psycopg2.OperationalError: If connection fails.
-    """
-    if not HAS_PSYCOPG2:
-        raise RuntimeError(
-            "psycopg2 is required for PostgreSQL geospatial repositories. "
-            "Install with: pip install psycopg2-binary"
-        )
-    return psycopg2.connect(
-        dbname=os.getenv("PGDATABASE", "mse_platform"),
-        user=os.getenv("PGUSER", "mse_user"),
-        password=os.getenv("PGPASSWORD", "mse_pass"),
-        host=os.getenv("PGHOST", "localhost"),
-        port=int(os.getenv("PGPORT", "5432")),
-    )
+from src.geospatial.infrastructure.persistence.connection import get_connection as _get_connection
 
 
 class RawFileDiscoveryRepositoryImpl(RawFileDiscoveryRepository):
@@ -316,10 +294,12 @@ class ProcessedLayerRepositoryImpl(ProcessedLayerRepository):
                     width, height, nodata_value,
                     min_value, max_value, mean_value,
                     valid_pixel_count, nodata_pixel_count,
-                    acquisition_date, processing_version
+                    acquisition_date, processing_version,
+                    data_source_id, footprint_geometry
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, ST_GeomFromText(%s, 4326)
                 )
                 RETURNING id
                 """,
@@ -345,6 +325,8 @@ class ProcessedLayerRepositoryImpl(ProcessedLayerRepository):
                     layer.nodata_pixel_count,
                     _parse_date(layer.acquisition_date),
                     layer.processing_version,
+                    layer.data_source_id,
+                    layer.footprint_geometry.wkt if layer.footprint_geometry else None,
                 ),
             )
             layer_id = cur.fetchone()[0]
@@ -403,6 +385,8 @@ class ProcessedLayerRepositoryImpl(ProcessedLayerRepository):
             acquisition_date=str(row["acquisition_date"]) if row["acquisition_date"] else "",
             processing_version=row["processing_version"],
             created_at=str(row["created_at"]) if row["created_at"] else None,
+            data_source_id=row.get("data_source_id"),
+            footprint_geometry=row.get("footprint_geometry"),
         )
 
     def close(self) -> None:

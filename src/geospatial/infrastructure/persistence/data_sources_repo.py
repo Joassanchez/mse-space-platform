@@ -3,9 +3,7 @@
 from typing import Any
 
 from src.geospatial.domain.interfaces import DataSourceRepository
-from src.geospatial.infrastructure.persistence.postgres_repositories import (
-    _get_connection,
-)
+from src.geospatial.infrastructure.persistence.connection import get_connection
 
 try:
     import psycopg2
@@ -31,7 +29,7 @@ class DataSourceRepositoryImpl(DataSourceRepository):
     def conn(self):
         """Lazy connection property."""
         if self._conn is None or self._conn.closed:
-            self._conn = _get_connection()
+            self._conn = get_connection()
         return self._conn
 
     def get_by_code(self, code: str) -> dict[str, Any] | None:

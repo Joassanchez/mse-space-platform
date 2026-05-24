@@ -109,3 +109,30 @@ def load_sources_config(config_path: str | Path | None = None) -> SourceConfig:
         raise ValueError("Configuration must contain a 'sources' key")
 
     return SourceConfig(**raw_config)
+
+
+def load_geospatial_config(config_path: str | Path | None = None) -> dict[str, Any]:
+    """Load the geospatial-sources.yaml configuration file.
+
+    Args:
+        config_path: Path to geospatial-sources.yaml. Defaults to
+                     src/config/geospatial-sources.yaml relative to this module.
+
+    Returns:
+        Dict with geospatial configuration (variables, roi, nodata_value, etc.).
+
+    Raises:
+        FileNotFoundError: If the config file does not exist.
+    """
+    if config_path is None:
+        config_path = Path(__file__).parent / "geospatial-sources.yaml"
+    else:
+        config_path = Path(config_path)
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Geospatial configuration file not found: {config_path}")
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        raw_config = yaml.safe_load(f)
+
+    return raw_config or {}

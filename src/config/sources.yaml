@@ -9,16 +9,3 @@ sources:
     format: "HDF5"
     provider: "NASA Earthdata / NSIDC"
 
-geospatial:
-  variables:
-    - name: "sm_surface"
-      path: "Geophysical_Data/sm_surface"
-      display_name: "Surface Soil Moisture"
-      units: "m3 m-3"
-      expected_min: 0.0
-      expected_max: 0.9
-  roi:
-    enabled: true
-    path: "data/config/roi_cordoba.geojson"  # Default ROI GeoJSON path — Córdoba pilot region
-  nodata_value: -9999.0
-  processing_version: "v1"

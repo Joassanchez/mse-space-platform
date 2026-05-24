@@ -131,84 +131,119 @@ class PostgreSQLMetadataRepository:
 
     # ---- Ingestion Jobs ----
 
+    def _resolve_source_id(self, source_code: str) -> int | None:
+        """Resolve a source code to its database ID, creating it if needed."""
+        existing = self.get_source_id(source_code)
+        if existing is not None:
+            return existing
+        # Auto-create source with minimal info for tests/dev
+        return self.ensure_source(
+            code=source_code,
+            name=source_code.upper(),
+            provider="auto",
+        )
+
     def save_job(self, job: IngestionJob) -> None:
-        """Save or update an ingestion job."""
+        """Save or update an ingestion job.
+
+        Maps the IngestionJob model fields to the ingestion_jobs table schema.
+        Resolves ``source`` (string code) to ``source_id`` (FK) automatically.
+        """
+        source_id = self._resolve_source_id(job.source)
+        error_msg = job.errors[0] if job.errors else None
+
         with self.conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO ingestion_jobs (
-                    id, source_id, dataset_id, region_id, date_from, date_to,
-                    bbox, status, ready_for_etl, search_only, error_message,
-                    started_at, finished_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    id, source_id, date_from, date_to,
+                    bbox, status, ready_for_etl, search_only, error_message
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     status = EXCLUDED.status,
                     ready_for_etl = EXCLUDED.ready_for_etl,
-                    error_message = EXCLUDED.error_message,
-                    finished_at = EXCLUDED.finished_at
+                    error_message = EXCLUDED.error_message
                 """,
                 (
                     job.job_id,
-                    job.source_id,
-                    job.dataset_id,
-                    job.region_id,
-                    job.date_from,
-                    job.date_to,
+                    source_id,
+                    job.start_date,
+                    job.end_date,
                     job.bbox,
                     job.state.value if hasattr(job.state, 'value') else job.state,
                     job.ready_for_etl,
                     job.search_only,
-                    job.error_message,
-                    job.started_at,
-                    job.finished_at,
+                    error_msg,
                 ),
             )
             self.conn.commit()
 
     def get_job(self, job_id: str) -> Optional[IngestionJob]:
-        """Retrieve an ingestion job by id."""
+        """Retrieve an ingestion job by id.
+
+        Returns:
+            IngestionJob with fields mapped from the DB schema to the model.
+            ``source`` is resolved from ``data_sources`` via the stored FK.
+        """
         with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT * FROM ingestion_jobs WHERE id = %s", (job_id,))
+            cur.execute(
+                """
+                SELECT j.*, ds.code AS source_code
+                FROM ingestion_jobs j
+                LEFT JOIN data_sources ds ON j.source_id = ds.id
+                WHERE j.id = %s
+                """,
+                (job_id,),
+            )
             row = cur.fetchone()
             if not row:
                 return None
+
+            errors: list[str] = []
+            if row.get("error_message"):
+                errors.append(row["error_message"])
+
             return IngestionJob(
                 job_id=row["id"],
-                source_id=row["source_id"],
-                dataset_id=row["dataset_id"],
-                region_id=row["region_id"],
-                date_from=str(row["date_from"]),
-                date_to=str(row["date_to"]),
-                bbox=list(row["bbox"]),
+                source=row.get("source_code", "unknown"),
+                start_date=str(row["date_from"]),
+                end_date=str(row["date_to"]),
+                bbox=list(row["bbox"]) if row["bbox"] else [],
                 state=JobState(row["status"]),
                 ready_for_etl=row["ready_for_etl"],
                 search_only=row["search_only"],
-                error_message=row["error_message"],
-                started_at=row["started_at"],
-                finished_at=row["finished_at"],
-                created_at=row["created_at"],
+                errors=errors,
             )
 
     # ---- Raw Files ----
 
     def save_file(self, raw_file: RawFile, job_id: str) -> None:
-        """Register a raw file in PostgreSQL."""
+        """Register a raw file in PostgreSQL.
+
+        Resolves ``source_id`` by looking up the ingestion_job's source FK.
+        The columns not present in the RawFile model (dataset_id, metadata_json)
+        are set to NULL (nullable in the DB schema).
+        """
         with self.conn.cursor() as cur:
+            # Resolve source_id from the job
+            cur.execute("SELECT source_id FROM ingestion_jobs WHERE id = %s", (job_id,))
+            job_row = cur.fetchone()
+            source_id = job_row[0] if job_row else None
+
             cur.execute(
                 """
                 INSERT INTO raw_files (
-                    ingestion_job_id, source_id, dataset_id, granule_id,
+                    ingestion_job_id, source_id, granule_id,
                     source_product_id, remote_url, acquisition_date,
                     file_path, file_name, file_format, size_bytes,
-                    checksum_sha256, metadata_json, status, error_message, ready_for_etl
+                    checksum_sha256, status, error_message, ready_for_etl
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 """,
                 (
                     job_id,
-                    raw_file.source_id,
-                    raw_file.dataset_id,
+                    source_id,
                     raw_file.granule_id,
                     raw_file.source_product_id,
                     raw_file.remote_url,
@@ -218,7 +253,6 @@ class PostgreSQLMetadataRepository:
                     "HDF5",
                     raw_file.size_bytes,
                     raw_file.checksum_sha256,
-                    json.dumps(raw_file.metadata_json) if raw_file.metadata_json else None,
                     raw_file.status.value if hasattr(raw_file.status, 'value') else raw_file.status,
                     raw_file.error_message,
                     raw_file.ready_for_etl,

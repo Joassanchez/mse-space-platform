@@ -19,7 +19,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from src.config.config_loader import load_sources_config
+from src.config.config_loader import load_geospatial_config, load_sources_config
 from src.geospatial.application.orchestrator import GeospatialOrchestrator
 from src.geospatial.application.raster_processing_service import RasterProcessingService
 from src.geospatial.infrastructure.hdf5.smap_reader import SMAPHDF5Reader
@@ -188,7 +188,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         roi_enabled = args.roi_enabled
 
-    # Load config
+    # Load configs
     config_path = args.config
     try:
         config = load_sources_config(config_path)
@@ -197,8 +197,11 @@ def main(argv: list[str] | None = None) -> int:
         console.print(f"[red]Configuration error:[/red] {e}")
         return 2
 
-    # Extract geospatial config
-    geospatial_config = sources_config.get("geospatial", {})
+    # Extract geospatial config (from geospatial-sources.yaml)
+    try:
+        geospatial_config = load_geospatial_config()
+    except FileNotFoundError:
+        geospatial_config = {}
     variable_configs = geospatial_config.get("variables", [])
     nodata_value = geospatial_config.get("nodata_value", -9999.0)
 

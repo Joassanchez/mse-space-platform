@@ -158,7 +158,7 @@ class GeoTIFFWriter:
         out_data = data.astype(out_dtype)
 
         # Determine nodata
-        effective_nodata = nodata_value if nodata_value is not None else metadata.nodata_value if hasattr(metadata, 'nodata_value') else None
+        effective_nodata = nodata_value
 
         # Build rasterio profile
         height, width = out_data.shape

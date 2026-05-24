@@ -8,8 +8,6 @@ These tests require:
 Run with: pytest -m integration tests/integration/test_postgresql_repository.py
 """
 
-import os
-
 import pytest
 
 from src.models.job_models import IngestionJob, JobState, RawFile, RawFileStatus
@@ -43,11 +41,13 @@ class TestPostgreSQLRepository:
             name="SMAP Soil Moisture Active Passive",
             provider="NASA_NSIDC",
         )
-        self.dataset_id = self.repo.ensure_dataset(
-            source_id=self.source_id,
-            short_name="SPL4SMGP",
-            version="008",
-        )
+        # Clean up test data from previous runs
+        test_job_ids = ["test_job_001", "test_job_transitions", "test_job_files", "test_idemp_job1"]
+        with self.repo.conn.cursor() as cur:
+            for jid in test_job_ids:
+                cur.execute("DELETE FROM raw_files WHERE ingestion_job_id = %s", (jid,))
+                cur.execute("DELETE FROM ingestion_jobs WHERE id = %s", (jid,))
+        self.repo.conn.commit()
         yield
         self.repo.close()
 
@@ -60,10 +60,9 @@ class TestPostgreSQLRepository:
         """Save an ingestion job and retrieve it."""
         job = IngestionJob(
             job_id="test_job_001",
-            source_id=self.source_id,
-            dataset_id=self.dataset_id,
-            date_from="2024-01-01",
-            date_to="2024-01-07",
+            source="smap",
+            start_date="2024-01-01",
+            end_date="2024-01-07",
             bbox=[-65.0, -35.0, -62.0, -30.0],
             state=JobState.COMPLETED,
             ready_for_etl=True,
@@ -80,10 +79,9 @@ class TestPostgreSQLRepository:
         """Test job state transitions in DB."""
         job = IngestionJob(
             job_id="test_job_transitions",
-            source_id=self.source_id,
-            dataset_id=self.dataset_id,
-            date_from="2024-01-01",
-            date_to="2024-01-07",
+            source="smap",
+            start_date="2024-01-01",
+            end_date="2024-01-07",
             bbox=[-65.0, -35.0, -62.0, -30.0],
             state=JobState.PENDING,
         )
@@ -107,10 +105,9 @@ class TestPostgreSQLRepository:
         """Save a raw file record and verify retrieval."""
         job = IngestionJob(
             job_id="test_job_files",
-            source_id=self.source_id,
-            dataset_id=self.dataset_id,
-            date_from="2024-01-01",
-            date_to="2024-01-07",
+            source="smap",
+            start_date="2024-01-01",
+            end_date="2024-01-07",
             bbox=[-65.0, -35.0, -62.0, -30.0],
             state=JobState.COMPLETED,
             ready_for_etl=True,
@@ -142,10 +139,9 @@ class TestPostgreSQLRepository:
         # Job 1: save a file
         job1 = IngestionJob(
             job_id="test_idemp_job1",
-            source_id=self.source_id,
-            dataset_id=self.dataset_id,
-            date_from="2024-01-01",
-            date_to="2024-01-07",
+            source="smap",
+            start_date="2024-01-01",
+            end_date="2024-01-07",
             bbox=[-65.0, -35.0, -62.0, -30.0],
             state=JobState.COMPLETED,
             ready_for_etl=True,
