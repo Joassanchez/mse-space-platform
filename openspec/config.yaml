@@ -3,26 +3,26 @@ schema: spec-driven
 
 context: |
   Project: mse-space-platform — Plataforma Inteligente de Gestión Hídrica y Riesgo Agroambiental
-  Stack: Python (greenfield, no dependency files yet)
+  Stack: Python 3.11 — pytest 7.0+, hexagonal architecture
   Arch: Hexagonal/clean — ingestion connector pattern (see PRD-modulo1.md)
   Domain: Geospatial water & agricultural risk management
   Module 1: SMAP data ingestion (earthaccess, h5py, xarray, pandas, numpy)
   Storage: PostgreSQL + PostGIS via Docker Compose
   Repo: https://github.com/Joassanchez/mse-space-platform.git
 
-strict_tdd: false
+strict_tdd: true
 explanation: |
-  Strict TDD is disabled — Python test runner not yet configured (greenfield project).
-  Once pytest or equivalent is installed and configured, set strict_tdd: true.
+  Strict TDD is active. pytest 7.0+ detected with markers for unit and integration tests.
+  Coverage, linter, type checker, and formatter not yet configured.
 
 testing:
   runner:
-    available: false
-    framework: null
-    command: null
+    available: true
+    framework: pytest
+    command: pytest -v
   layers:
-    unit: false
-    integration: false
+    unit: true
+    integration: true
     e2e: false
   coverage:
     available: false
@@ -52,10 +52,10 @@ rules:
   apply:
     - Follow existing code patterns (no style guide yet — establish one)
     - Keep data/raw writes immutable (never modify downloaded files)
-    tdd: false
-    test_command: ""
+    tdd: true
+    test_command: "pytest -v"
   verify:
-    test_command: ""
+    test_command: "pytest -v"
     build_command: ""
     coverage_threshold: 0
   archive:
