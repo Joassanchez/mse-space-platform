@@ -34,7 +34,17 @@ CREATE TABLE IF NOT EXISTS regions (
 CREATE INDEX IF NOT EXISTS idx_regions_geometry ON regions USING GIST (geometry);
 CREATE INDEX IF NOT EXISTS idx_regions_type ON regions (region_type);
 CREATE INDEX IF NOT EXISTS idx_regions_active ON regions (is_active) WHERE is_active = TRUE;
-ALTER TABLE regions ADD CONSTRAINT IF NOT EXISTS uq_regions_name_country_province UNIQUE (name, country, province);
+-- NOTE: ALTER TABLE ... ADD CONSTRAINT IF NOT EXISTS requires PG 16+
+-- Use DO block for PG 15 compatibility (postgis/postgis:15-3.4-alpine)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'uq_regions_name_country_province'
+  ) THEN
+    ALTER TABLE regions ADD CONSTRAINT uq_regions_name_country_province UNIQUE (name, country, province);
+  END IF;
+END;
+$$;
 
 -- ============================================================
 -- INDICATORS
