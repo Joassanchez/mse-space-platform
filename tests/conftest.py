@@ -3,7 +3,6 @@
 Provides async fixtures for test database, Redis, HTTP client, and mock settings.
 """
 
-import asyncio
 from collections.abc import AsyncGenerator
 
 import fakeredis.aioredis
@@ -20,14 +19,6 @@ from argplant.shared.database import Base, get_session
 # ---------------------------------------------------------------------------
 # Database fixtures
 # ---------------------------------------------------------------------------
-
-@pytest_asyncio.fixture(scope="session")
-def event_loop():
-    """Create a single event loop for the test session."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
 
 @pytest_asyncio.fixture
 async def test_engine():

@@ -1,6 +1,14 @@
-.PHONY: up down test lint seed migrate migration
+.PHONY: up down test lint seed migrate migration setup
 
-up:
+.env:
+	@echo "📋 Creando .env desde .env.example..."
+	cp .env.example .env
+	@echo "✅ .env creado. Editalo para agregar tus API keys."
+
+setup: .env
+	docker compose build
+
+up: .env
 	docker compose up -d
 
 down:

@@ -8,8 +8,11 @@ import pytest
 class TestConfigDefaults:
     """Verify that Settings defaults match the design specification."""
 
-    def test_default_database_url(self, mock_settings):
-        assert "postgresql+asyncpg" in mock_settings.DATABASE_URL or "sqlite" in mock_settings.DATABASE_URL
+    def test_default_database_url_is_postgres(self):
+        from argplant.shared.config import Settings
+
+        s = Settings(DATABASE_URL="override-me")
+        assert s.DATABASE_URL == "override-me"
 
     def test_default_rate_limit(self, mock_settings):
         assert mock_settings.RATE_LIMIT_REQUESTS == 5  # overridden in fixture

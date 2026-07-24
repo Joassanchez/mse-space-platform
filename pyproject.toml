@@ -19,7 +19,6 @@ dependencies = [
     "pydantic-settings>=2.0,<3.0",
     "pyyaml>=6.0,<7.0",
     "tenacity>=9.0,<10.0",
-    "slowapi>=0.1,<1.0",
 ]
 
 [project.optional-dependencies]
