@@ -159,13 +159,13 @@ main
 
 ### Models
 
-- [ ] 2.1 Create `argplant/modules/__init__.py` and `argplant/modules/agroclimate/__init__.py`.
+- [x] 2.1 Create `argplant/modules/__init__.py` and `argplant/modules/agroclimate/__init__.py`.
   - **Files**: `argplant/modules/__init__.py`, `argplant/modules/agroclimate/__init__.py`
   - **Spec**: N/A
   - **Lines**: ~2
   - **Verify**: Package importable
 
-- [ ] 2.2 Create `argplant/modules/agroclimate/models.py` — SQLAlchemy model `WeatherSnapshot` (location_id, temp, humidity, wind_speed, conditions, source, data JSONB, captured_at). Pydantic schemas: `WeatherResponse`, `PowerResponse`, `PowerParameter`. Location model.
+- [x] 2.2 Create `argplant/modules/agroclimate/models.py` — SQLAlchemy model `WeatherSnapshot` (location_id, temp, humidity, wind_speed, conditions, source, data JSONB, captured_at). Pydantic schemas: `WeatherResponse`, `PowerResponse`, `PowerParameter`. Location model.
   - **Files**: `argplant/modules/agroclimate/models.py`
   - **Spec**: Weather Forecast Retrieval, Agroclimatic Parameters Retrieval
   - **Lines**: ~65
@@ -173,7 +173,7 @@ main
 
 ### HTTP Clients
 
-- [ ] 2.3 Create `argplant/modules/agroclimate/client.py` — `OpenWeatherClient` with `current(lat, lon)` method: httpx GET to `/data/2.5/weather`, API key from settings, 10s timeout, tenacity retry (3x, exponential, 5xx only). `NasaPowerClient` with `daily(lat, lon, start, end, params)`: GET to POWER REST API, 15s timeout, retry. Both return normalized dicts.
+- [x] 2.3 Create `argplant/modules/agroclimate/client.py` — `OpenWeatherClient` with `current(lat, lon)` method: httpx GET to `/data/2.5/weather`, API key from settings, 10s timeout, tenacity retry (3x, exponential, 5xx only). `NasaPowerClient` with `daily(lat, lon, start, end, params)`: GET to POWER REST API, 15s timeout, retry. Both return normalized dicts.
   - **Files**: `argplant/modules/agroclimate/client.py`
   - **Spec**: Weather Forecast Retrieval, Agroclimatic Parameters Retrieval
   - **Lines**: ~80
@@ -181,7 +181,7 @@ main
 
 ### Repository
 
-- [ ] 2.4 Create `argplant/modules/agroclimate/repository.py` — `WeatherSnapshotRepo` with `upsert(session, snapshot)` and `get_latest(session, location_id)`. Uses SQLAlchemy async queries.
+- [x] 2.4 Create `argplant/modules/agroclimate/repository.py` — `WeatherSnapshotRepo` with `upsert(session, snapshot)` and `get_latest(session, location_id)`. Uses SQLAlchemy async queries.
   - **Files**: `argplant/modules/agroclimate/repository.py`
   - **Spec**: Weather Forecast Retrieval (persistence)
   - **Lines**: ~40
@@ -189,7 +189,7 @@ main
 
 ### Service
 
-- [ ] 2.5 Create `argplant/modules/agroclimate/service.py` — `WeatherService.get(lat, lon)`: check cache → fetch from OpenWeatherClient → normalize → repo.upsert → cache.set → return WeatherResponse. On API fail: check stale cache → return with stale flag or 503. `PowerService.get(lat, lon, start, end, params)`: same pattern with 24h TTL.
+- [x] 2.5 Create `argplant/modules/agroclimate/service.py` — `WeatherService.get(lat, lon)`: check cache → fetch from OpenWeatherClient → normalize → repo.upsert → cache.set → return WeatherResponse. On API fail: check stale cache → return with stale flag or 503. `PowerService.get(lat, lon, start, end, params)`: same pattern with 24h TTL.
   - **Files**: `argplant/modules/agroclimate/service.py`
   - **Spec**: Weather Forecast Retrieval (cache miss + stale), Agroclimatic Parameters Retrieval
   - **Lines**: ~90
@@ -197,7 +197,7 @@ main
 
 ### Router
 
-- [ ] 2.6 Create `argplant/modules/agroclimate/router.py` — `GET /api/v1/agroclimate/weather` (lat, lon query params) → WeatherResponse + X-Cache header. `GET /api/v1/agroclimate/power` (lat, lon, start_date, end_date, parameters) → PowerResponse. Wire into `main.py` lifespan and router mount.
+- [x] 2.6 Create `argplant/modules/agroclimate/router.py` — `GET /api/v1/agroclimate/weather` (lat, lon query params) → WeatherResponse + X-Cache header. `GET /api/v1/agroclimate/power` (lat, lon, start_date, end_date, parameters) → PowerResponse. Wire into `main.py` lifespan and router mount.
   - **Files**: `argplant/modules/agroclimate/router.py`, modify `argplant/main.py`
   - **Spec**: Weather Forecast Retrieval (all scenarios), Agroclimatic Parameters Retrieval, IP-Based Rate Limiting
   - **Lines**: ~50
@@ -205,13 +205,13 @@ main
 
 ### Tests
 
-- [ ] 2.7 Create `tests/unit/test_agroclimate_service.py` — test WeatherService: cache hit path, cache miss + API success, API fail + stale cache, API fail + cold cache → 503. Test PowerService: parameter normalization, date range validation.
+- [x] 2.7 Create `tests/unit/test_agroclimate_service.py` — test WeatherService: cache hit path, cache miss + API success, API fail + stale cache, API fail + cold cache → 503. Test PowerService: parameter normalization, date range validation.
   - **Files**: `tests/unit/test_agroclimate_service.py`
   - **Spec**: Weather Forecast Retrieval (all scenarios), Agroclimatic Parameters Retrieval
   - **Lines**: ~80
   - **Verify**: All scenarios pass with mocked clients
 
-- [ ] 2.8 Create `tests/integration/test_agroclimate_router.py` — test endpoints via httpx.AsyncClient: fresh forecast (200 + X-Cache: HIT), cache miss (200 + X-Cache: MISS), stale fallback (200 + X-Stale: true), rate limit exceeded (429 + Retry-After), POWER parameters (200 + metric values).
+- [x] 2.8 Create `tests/integration/test_agroclimate_router.py` — test endpoints via httpx.AsyncClient: fresh forecast (200 + X-Cache: HIT), cache miss (200 + X-Cache: MISS), stale fallback (200 + X-Stale: true), rate limit exceeded (429 + Retry-After), POWER parameters (200 + metric values).
   - **Files**: `tests/integration/test_agroclimate_router.py`
   - **Spec**: Weather Forecast Retrieval (all scenarios), Agroclimatic Parameters Retrieval, IP-Based Rate Limiting
   - **Lines**: ~70
