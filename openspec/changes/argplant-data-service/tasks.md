@@ -223,7 +223,7 @@ main
 
 ### Models
 
-- [ ] 3.1 Create `argplant/modules/satellite/__init__.py` and `argplant/modules/satellite/models.py` — SQLAlchemy `SatelliteScene` (scene_id, platform, bbox JSONB, acquisition_date, cloud_cover, metadata JSONB, file_path). Pydantic: `SmSceneMeta`, `SentinelSceneMeta`, `DownloadResponse`.
+- [x] 3.1 Create `argplant/modules/satellite/__init__.py` and `argplant/modules/satellite/models.py` — SQLAlchemy `SatelliteScene` (scene_id, platform, bbox JSONB, acquisition_date, cloud_cover, metadata JSONB, file_path). Pydantic: `SmSceneMeta`, `SentinelSceneMeta`, `DownloadResponse`.
   - **Files**: `argplant/modules/satellite/__init__.py`, `argplant/modules/satellite/models.py`
   - **Spec**: SMAP Soil Moisture Metadata Search, Sentinel Catalog Search, Async Sentinel Download
   - **Lines**: ~60
@@ -231,7 +231,7 @@ main
 
 ### Clients
 
-- [ ] 3.2 Create `argplant/modules/satellite/client.py` — `EarthdataClient`: uses earthaccess lib for token mgmt, `search_sm(bbox, start, end)` returns SMAP granule metadata. `CdseClient`: OAuth2 token refresh, `search_sentinel(bbox, start, end, platform, max_cloud)` via STAC API, `download(scene_id, storage)` streams file to storage.
+- [x] 3.2 Create `argplant/modules/satellite/client.py` — `EarthdataClient`: uses earthaccess lib for token mgmt, `search_sm(bbox, start, end)` returns SMAP granule metadata. `CdseClient`: OAuth2 token refresh, `search_sentinel(bbox, start, end, platform, max_cloud)` via STAC API, `download(scene_id, storage)` streams file to storage.
   - **Files**: `argplant/modules/satellite/client.py`
   - **Spec**: SMAP Soil Moisture Metadata Search, Sentinel Catalog Search, Async Sentinel Download
   - **Lines**: ~100
@@ -239,7 +239,7 @@ main
 
 ### Repository
 
-- [ ] 3.3 Create `argplant/modules/satellite/repository.py` — `SatelliteSceneRepo` with `upsert(session, scene)`, `get_by_scene_id(session, scene_id)`, `search(session, platform, bbox, start, end)`.
+- [x] 3.3 Create `argplant/modules/satellite/repository.py` — `SatelliteSceneRepo` with `upsert(session, scene)`, `get_by_scene_id(session, scene_id)`, `search(session, platform, bbox, start, end)`.
   - **Files**: `argplant/modules/satellite/repository.py`
   - **Spec**: SMAP/Sentinel metadata persistence
   - **Lines**: ~45
@@ -247,7 +247,7 @@ main
 
 ### Service
 
-- [ ] 3.4 Create `argplant/modules/satellite/service.py` — `SmapService.search(bbox, start, end)`: delegate to EarthdataClient → normalize → repo.upsert → return list[SmSceneMeta]. `SentinelService.search(...)`: CdseClient STAC search → normalize → repo.upsert. `SentinelService.enqueue_download(scene_id)`: validate scene exists → create ingestion_job record → enqueue arq job → return job_id.
+- [x] 3.4 Create `argplant/modules/satellite/service.py` — `SmapService.search(bbox, start, end)`: delegate to EarthdataClient → normalize → repo.upsert → return list[SmSceneMeta]. `SentinelService.search(...)`: CdseClient STAC search → normalize → repo.upsert. `SentinelService.enqueue_download(scene_id)`: validate scene exists → create ingestion_job record → enqueue arq job → return job_id.
   - **Files**: `argplant/modules/satellite/service.py`
   - **Spec**: SMAP Soil Moisture Metadata Search, Sentinel Catalog Search, Async Sentinel Download (queue)
   - **Lines**: ~80
@@ -255,7 +255,7 @@ main
 
 ### Tasks
 
-- [ ] 3.5 Create `argplant/modules/satellite/tasks.py` — `download_sentinel(ctx, scene_id)` arq job function: lookup scene → CdseClient.download → storage.save → update scene.file_path → update job status to completed. On failure: retry up to 3x (arq max_tries), then status → failed with error in result JSONB.
+- [x] 3.5 Create `argplant/modules/satellite/tasks.py` — `download_sentinel(ctx, scene_id)` arq job function: lookup scene → CdseClient.download → storage.save → update scene.file_path → update job status to completed. On failure: retry up to 3x (arq max_tries), then status → failed with error in result JSONB.
   - **Files**: `argplant/modules/satellite/tasks.py`
   - **Spec**: Async Sentinel Download (download lifecycle), data-ingestion-pipeline (Async Satellite Download Jobs)
   - **Lines**: ~55
@@ -263,7 +263,7 @@ main
 
 ### Router
 
-- [ ] 3.6 Create `argplant/modules/satellite/router.py` — `GET /api/v1/satellite/smap` (bbox, start_date, end_date) → list[SmSceneMeta]. `GET /api/v1/satellite/sentinel/search` (bbox, start_date, end_date, platform, max_cloud_cover) → list[SentinelSceneMeta]. `POST /api/v1/satellite/sentinel/{id}/download` → 202 {job_id, status: "queued"} or 404. Wire into main.py.
+- [x] 3.6 Create `argplant/modules/satellite/router.py` — `GET /api/v1/satellite/smap` (bbox, start_date, end_date) → list[SmSceneMeta]. `GET /api/v1/satellite/sentinel/search` (bbox, start_date, end_date, platform, max_cloud_cover) → list[SentinelSceneMeta]. `POST /api/v1/satellite/sentinel/{id}/download` → 202 {job_id, status: "queued"} or 404. Wire into main.py.
   - **Files**: `argplant/modules/satellite/router.py`, modify `argplant/main.py`
   - **Spec**: SMAP Soil Moisture Metadata Search, Sentinel Catalog Search, Async Sentinel Download
   - **Lines**: ~55
@@ -271,13 +271,13 @@ main
 
 ### Tests
 
-- [ ] 3.7 Create `tests/unit/test_satellite_service.py` — test SmapService/SentinelService: search normalization, enqueue creates job, download task lifecycle (queued → completed/failed).
+- [x] 3.7 Create `tests/unit/test_satellite_service.py` — test SmapService/SentinelService: search normalization, enqueue creates job, download task lifecycle (queued → completed/failed).
   - **Files**: `tests/unit/test_satellite_service.py`
   - **Spec**: All satellite scenarios
   - **Lines**: ~75
   - **Verify**: All unit tests pass
 
-- [ ] 3.8 Create `tests/integration/test_satellite_router.py` — test all three endpoints via TestClient with mocked external APIs.
+- [x] 3.8 Create `tests/integration/test_satellite_router.py` — test all three endpoints via TestClient with mocked external APIs.
   - **Files**: `tests/integration/test_satellite_router.py`
   - **Spec**: All satellite scenarios
   - **Lines**: ~65
