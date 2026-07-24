@@ -101,7 +101,7 @@ def _normalise_sentinel_feature(feature: dict[str, Any]) -> SentinelSceneMeta:
         thumbnail_url = thumb_asset.get("href")
 
     return SentinelSceneMeta(
-        scene_id=feat_id,
+        id=feat_id,
         acquisition_date=acq_date,
         cloud_cover=float(cloud_cover) if cloud_cover is not None else None,
         thumbnail_url=thumbnail_url,
@@ -155,7 +155,7 @@ class SmapService:
                 bbox=meta.bbox,
                 acquisition_date=meta.acquisition_date,
                 cloud_cover=None,
-                metadata=entry,
+                scene_metadata=entry,
             )
             await self._repo.upsert(session, scene)
 
@@ -208,12 +208,12 @@ class SentinelService:
 
             # Persist metadata to DB
             scene = SatelliteScene(
-                scene_id=meta.scene_id,
+                scene_id=meta.id,
                 platform=platform,
                 bbox=meta.bbox,
                 acquisition_date=meta.acquisition_date,
                 cloud_cover=meta.cloud_cover,
-                metadata=feature,
+                scene_metadata=feature,
             )
             await self._repo.upsert(session, scene)
 

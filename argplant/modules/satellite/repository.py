@@ -24,7 +24,7 @@ class SatelliteSceneRepo:
             existing.bbox = scene.bbox
             existing.acquisition_date = scene.acquisition_date
             existing.cloud_cover = scene.cloud_cover
-            existing.metadata = scene.metadata
+            existing.scene_metadata = scene.scene_metadata
             existing.file_path = scene.file_path
             await session.flush()
             return existing

@@ -200,8 +200,8 @@ async def test_sentinel_search_returns_200(
 
     # Verify max_cloud is forwarded
     mock_cdse.assert_called_once()
-    args, kwargs = mock_cdse.call_args
-    assert kwargs["max_cloud"] == 10.0
+    call_args = mock_cdse.call_args[0]  # positional args: bbox, start_date, end_date, platform, max_cloud
+    assert call_args[4] == 10.0
 
 
 @pytest.mark.asyncio
@@ -294,7 +294,7 @@ async def test_download_with_arq_mocked(test_engine):
                 bbox=[-61.0, -34.0, -60.0, -33.0],
                 acquisition_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
                 cloud_cover=5.0,
-                metadata={"id": "S2A_download_test"},
+                scene_metadata={"id": "S2A_download_test"},
             )
             s.add(scene)
 

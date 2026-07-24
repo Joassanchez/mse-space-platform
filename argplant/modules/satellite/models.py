@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy import JSON, DateTime, Double, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -31,7 +31,9 @@ class SatelliteScene(Base):
         DateTime(timezone=True), nullable=False
     )
     cloud_cover: Mapped[float | None] = mapped_column(Double, nullable=True)
-    metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    scene_metadata: Mapped[dict[str, Any]] = mapped_column(
+        "metadata", JSON, nullable=False
+    )
     file_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
@@ -58,14 +60,14 @@ class SmSceneMeta(BaseModel):
 class SentinelSceneMeta(BaseModel):
     """Sentinel-1/2 scene metadata returned by the catalog search."""
 
-    id: str = Field(alias="scene_id")
+    id: str
     acquisition_date: datetime
     cloud_cover: float | None = None
     thumbnail_url: str | None = None
     platform: str
     bbox: list[float]
 
-    model_config = {"from_attributes": True, "populate_by_name": True}
+    model_config = {"from_attributes": True}
 
 
 class DownloadResponse(BaseModel):

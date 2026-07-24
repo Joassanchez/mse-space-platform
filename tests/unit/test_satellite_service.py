@@ -97,7 +97,7 @@ def test_normalise_sentinel_feature():
     """STAC feature maps to SentinelSceneMeta."""
     result = _normalise_sentinel_feature(MOCK_STAC_FEATURE)
     assert isinstance(result, SentinelSceneMeta)
-    assert result.scene_id == MOCK_STAC_FEATURE["id"]
+    assert result.id == MOCK_STAC_FEATURE["id"]
     assert result.cloud_cover == 8.5
     assert result.platform == "sentinel-2"
     assert result.thumbnail_url is not None
@@ -206,7 +206,7 @@ async def test_sentinel_search_returns_scenes(test_session: AsyncSession):
         # Verify persistence
         from argplant.modules.satellite.repository import SatelliteSceneRepo
         repo = SatelliteSceneRepo()
-        saved = await repo.find_by_scene_id(test_session, results[0].scene_id)
+        saved = await repo.find_by_scene_id(test_session, results[0].id)
         assert saved is not None
         assert saved.platform == "sentinel-2"
 
@@ -250,7 +250,7 @@ async def test_sentinel_validate_scene_found(test_session: AsyncSession):
         bbox=[-61, -34, -60, -33],
         acquisition_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
         cloud_cover=None,
-        metadata={"id": "S1A_test"},
+        scene_metadata={"id": "S1A_test"},
     )
     test_session.add(scene)
     await test_session.flush()
@@ -280,7 +280,7 @@ async def test_repo_find_by_bbox_filters_by_date(test_session: AsyncSession):
         bbox=[-61, -34, -60, -33],
         acquisition_date=datetime(2026, 1, 5, tzinfo=timezone.utc),
         cloud_cover=None,
-        metadata={},
+        scene_metadata={},
     )
     out_range = SatelliteScene(
         scene_id="s2_out_range",
@@ -288,7 +288,7 @@ async def test_repo_find_by_bbox_filters_by_date(test_session: AsyncSession):
         bbox=[-61, -34, -60, -33],
         acquisition_date=datetime(2025, 12, 1, tzinfo=timezone.utc),
         cloud_cover=None,
-        metadata={},
+        scene_metadata={},
     )
     test_session.add_all([in_range, out_range])
     await test_session.flush()
@@ -316,7 +316,7 @@ async def test_repo_update_file_path(test_session: AsyncSession):
         bbox=[-61, -34, -60, -33],
         acquisition_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
         cloud_cover=None,
-        metadata={},
+        scene_metadata={},
         file_path=None,
     )
     test_session.add(scene)
@@ -341,7 +341,7 @@ async def test_repo_upsert_inserts_and_updates(test_session: AsyncSession):
         bbox=[-61, -34, -60, -33],
         acquisition_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
         cloud_cover=5.0,
-        metadata={},
+        scene_metadata={},
     )
     result = await repo.upsert(test_session, scene)
     assert result.cloud_cover == 5.0
