@@ -49,31 +49,31 @@ main
 
 ### Project Scaffolding
 
-- [ ] 1.1 Create `pyproject.toml` with dependencies: fastapi, uvicorn, httpx, sqlalchemy[asyncio], asyncpg, alembic, redis, arq, pydantic-settings, pyyaml, tenacity, slowapi, pytest, pytest-asyncio, ruff.
+- [x] 1.1 Create `pyproject.toml` with dependencies: fastapi, uvicorn, httpx, sqlalchemy[asyncio], asyncpg, alembic, redis, arq, pydantic-settings, pyyaml, tenacity, slowapi, pytest, pytest-asyncio, ruff.
   - **Files**: `pyproject.toml`
   - **Spec**: N/A (infra)
   - **Lines**: ~40
   - **Verify**: `pip install -e .` succeeds
 
-- [ ] 1.2 Create `Dockerfile` (multi-stage: python-slim base, copy pyproject.toml, install deps, copy argplant/, CMD uvicorn).
+- [x] 1.2 Create `Dockerfile` (multi-stage: python-slim base, copy pyproject.toml, install deps, copy argplant/, CMD uvicorn).
   - **Files**: `Dockerfile`
   - **Spec**: N/A
   - **Lines**: ~25
   - **Verify**: `docker build -t argplant .` succeeds
 
-- [ ] 1.3 Create `docker-compose.yml` with services: `db` (postgis/postgis:16-3.4), `redis` (redis:7-alpine), `api` (build ., ports 8000, depends_on db+redis healthy), `worker` (same image, command: arq worker). Include healthchecks and volume mounts.
+- [x] 1.3 Create `docker-compose.yml` with services: `db` (postgis/postgis:16-3.4), `redis` (redis:7-alpine), `api` (build ., ports 8000, depends_on db+redis healthy), `worker` (same image, command: arq worker). Include healthchecks and volume mounts.
   - **Files**: `docker-compose.yml`
   - **Spec**: N/A
   - **Lines**: ~35
   - **Verify**: `docker compose config` validates
 
-- [ ] 1.4 Create `Makefile` with targets: `up`, `down`, `test`, `lint`, `seed`, `migrate`, `migration`.
+- [x] 1.4 Create `Makefile` with targets: `up`, `down`, `test`, `lint`, `seed`, `migrate`, `migration`.
   - **Files**: `Makefile`
   - **Spec**: N/A
   - **Lines**: ~15
   - **Verify**: `make --dry-run up` shows correct commands
 
-- [ ] 1.5 Create `.env.example` with all config keys from design (DATABASE_URL, REDIS_URL, API keys, coords).
+- [x] 1.5 Create `.env.example` with all config keys from design (DATABASE_URL, REDIS_URL, API keys, coords).
   - **Files**: `.env.example`
   - **Spec**: N/A
   - **Lines**: ~20
@@ -81,37 +81,37 @@ main
 
 ### Shared Infrastructure
 
-- [ ] 1.6 Create `argplant/__init__.py` (empty) and `argplant/shared/__init__.py` (empty).
+- [x] 1.6 Create `argplant/__init__.py` (empty) and `argplant/shared/__init__.py` (empty).
   - **Files**: `argplant/__init__.py`, `argplant/shared/__init__.py`
   - **Spec**: N/A
   - **Lines**: ~2
   - **Verify**: Package importable
 
-- [ ] 1.7 Create `argplant/shared/config.py` — `Settings(BaseSettings)` with all fields from design: DATABASE_URL, REDIS_URL, OPENWEATHER_API_KEY, POWER_TIMEOUT, EARTHDATA creds, CDSE creds, RATE_LIMIT config, SATELLITE_STORAGE_PATH, INGESTION_COORDS, LOG_LEVEL, CORS_ORIGINS. Use `SettingsConfigDict(env_file=".env")`.
+- [x] 1.7 Create `argplant/shared/config.py` — `Settings(BaseSettings)` with all fields from design: DATABASE_URL, REDIS_URL, OPENWEATHER_API_KEY, POWER_TIMEOUT, EARTHDATA creds, CDSE creds, RATE_LIMIT config, SATELLITE_STORAGE_PATH, INGESTION_COORDS, LOG_LEVEL, CORS_ORIGINS. Use `SettingsConfigDict(env_file=".env")`.
   - **Files**: `argplant/shared/config.py`
   - **Spec**: All modules (shared config)
   - **Lines**: ~45
   - **Verify**: `Settings()` loads with defaults; env override works
 
-- [ ] 1.8 Create `argplant/shared/database.py` — async SQLAlchemy engine via `create_async_engine`, `async_sessionmaker`, `get_session()` async generator dependency.
+- [x] 1.8 Create `argplant/shared/database.py` — async SQLAlchemy engine via `create_async_engine`, `async_sessionmaker`, `get_session()` async generator dependency.
   - **Files**: `argplant/shared/database.py`
   - **Spec**: N/A (shared)
   - **Lines**: ~30
   - **Verify**: Engine connects to test DB in pytest
 
-- [ ] 1.9 Create `argplant/shared/cache.py` — Redis client wrapper with `get_json()`, `set_json(key, value, ttl)`, `get_stale(key)` (checks extended TTL key), `delete(key)`. Uses `redis.asyncio`.
+- [x] 1.9 Create `argplant/shared/cache.py` — Redis client wrapper with `get_json()`, `set_json(key, value, ttl)`, `get_stale(key)` (checks extended TTL key), `delete(key)`. Uses `redis.asyncio`.
   - **Files**: `argplant/shared/cache.py`
   - **Spec**: agroclimate-data (cache), economy-prices (cache)
   - **Lines**: ~50
   - **Verify**: Unit test: set/get/stale/delete roundtrip with fakeredis
 
-- [ ] 1.10 Create `argplant/shared/storage.py` — `StorageBackend` Protocol class with `save(path, data)`, `exists(path)`, `get_path(path)`. `LocalStorage` implementation using `Path.mkdir(parents=True)`.
+- [x] 1.10 Create `argplant/shared/storage.py` — `StorageBackend` Protocol class with `save(path, data)`, `exists(path)`, `get_path(path)`. `LocalStorage` implementation using `Path.mkdir(parents=True)`.
   - **Files**: `argplant/shared/storage.py`
   - **Spec**: satellite-data (storage abstraction)
   - **Lines**: ~35
   - **Verify**: Unit test: save + exists + get_path on tempdir
 
-- [ ] 1.11 Create `argplant/shared/middleware.py` — IP rate limiter using Redis sliding window (INCR + EXPIRE). Configurable via `RATE_LIMIT_REQUESTS` / `RATE_LIMIT_WINDOW_SECONDS`. Returns 429 + `Retry-After`. Also: `X-Stale` header injection helper.
+- [x] 1.11 Create `argplant/shared/middleware.py` — IP rate limiter using Redis sliding window (INCR + EXPIRE). Configurable via `RATE_LIMIT_REQUESTS` / `RATE_LIMIT_WINDOW_SECONDS`. Returns 429 + `Retry-After`. Also: `X-Stale` header injection helper.
   - **Files**: `argplant/shared/middleware.py`
   - **Spec**: agroclimate-data (IP-Based Rate Limiting)
   - **Lines**: ~55
@@ -119,7 +119,7 @@ main
 
 ### Application Entry Point
 
-- [ ] 1.12 Create `argplant/main.py` — FastAPI app with CORS middleware, rate limiter middleware, lifespan event that initializes DB engine, Redis pool, and calls seed loaders. Mount placeholder routers (commented until modules exist). Include `/health` endpoint.
+- [x] 1.12 Create `argplant/main.py` — FastAPI app with CORS middleware, rate limiter middleware, lifespan event that initializes DB engine, Redis pool, and calls seed loaders. Mount placeholder routers (commented until modules exist). Include `/health` endpoint.
   - **Files**: `argplant/main.py`
   - **Spec**: N/A (app bootstrap)
   - **Lines**: ~50
@@ -127,7 +127,7 @@ main
 
 ### Database Migrations
 
-- [ ] 1.13 Create Alembic config: `alembic.ini`, `migrations/env.py` (async-compatible), `migrations/versions/001_initial.py` with all tables from design: `locations`, `weather_snapshots`, `satellite_scenes`, `price_series`, `ingestion_jobs` + indexes.
+- [x] 1.13 Create Alembic config: `alembic.ini`, `migrations/env.py` (async-compatible), `migrations/versions/001_initial.py` with all tables from design: `locations`, `weather_snapshots`, `satellite_scenes`, `price_series`, `ingestion_jobs` + indexes.
   - **Files**: `alembic.ini`, `migrations/env.py`, `migrations/versions/001_initial.py`, `migrations/script.py.mako`
   - **Spec**: N/A (all modules)
   - **Lines**: ~120
@@ -135,19 +135,19 @@ main
 
 ### Test Harness
 
-- [ ] 1.14 Create `tests/conftest.py` — async fixtures: `test_db` (create/drop tables), `test_session`, `test_redis` (fakeredis), `test_client` (httpx.AsyncClient with app), `mock_settings`. Include `pytest.ini` or `pyproject.toml` section for pytest-asyncio mode=auto.
+- [x] 1.14 Create `tests/conftest.py` — async fixtures: `test_db` (create/drop tables), `test_session`, `test_redis` (fakeredis), `test_client` (httpx.AsyncClient with app), `mock_settings`. Include `pytest.ini` or `pyproject.toml` section for pytest-asyncio mode=auto.
   - **Files**: `tests/__init__.py`, `tests/conftest.py`, `tests/unit/__init__.py`, `tests/integration/__init__.py`
   - **Spec**: N/A (test infra)
   - **Lines**: ~60
   - **Verify**: `pytest --collect-only` discovers tests
 
-- [ ] 1.15 Create `tests/unit/test_shared.py` — tests for config defaults, cache set/get/stale, storage save/exists, rate limiter logic.
+- [x] 1.15 Create `tests/unit/test_shared.py` — tests for config defaults, cache set/get/stale, storage save/exists, rate limiter logic.
   - **Files**: `tests/unit/test_shared.py`
   - **Spec**: agroclimate-data (Rate Limiting), shared cache/storage
   - **Lines**: ~80
   - **Verify**: `pytest tests/unit/test_shared.py` all pass
 
-- [ ] 1.16 Create `tests/integration/test_health.py` — test `/health` endpoint returns 200 via TestClient.
+- [x] 1.16 Create `tests/integration/test_health.py` — test `/health` endpoint returns 200 via TestClient.
   - **Files**: `tests/integration/test_health.py`
   - **Spec**: N/A
   - **Lines**: ~10
