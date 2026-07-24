@@ -70,14 +70,14 @@ async def health_check() -> JSONResponse:
 
 # Router mounts — uncommented as modules are implemented
 from argplant.modules.agroclimate.router import router as agroclimate_router
+from argplant.modules.satellite.router import router as satellite_router
 
-# from argplant.modules.satellite.router import router as satellite_router
 # from argplant.modules.agronomy.router import router as agronomy_router
 # from argplant.modules.economy.router import router as economy_router
 # from argplant.modules.ingestion.router import router as ingestion_router
 
 app.include_router(agroclimate_router, prefix="/api/v1/agroclimate")
-# app.include_router(satellite_router, prefix="/api/v1/satellite")
+app.include_router(satellite_router, prefix="/api/v1/satellite")
 # app.include_router(agronomy_router, prefix="/api/v1/agronomy")
 # app.include_router(economy_router, prefix="/api/v1/economy")
 # app.include_router(ingestion_router, prefix="/api/v1")
