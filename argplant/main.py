@@ -79,6 +79,7 @@ from argplant.modules.ingestion.router import router as ingestion_router
 from argplant.modules.analysis.router import router as analysis_router
 from argplant.modules.model.router import router as model_router
 from argplant.modules.communication.router import router as communication_router
+from argplant.modules.communication.chat_router import router as chat_router
 
 app.include_router(agroclimate_router, prefix="/api/v1/agroclimate")
 app.include_router(agronomy_router, prefix="/api/v1/agronomy")
@@ -88,3 +89,4 @@ app.include_router(ingestion_router, prefix="/api/v1")
 app.include_router(analysis_router, prefix="/api/v1")
 app.include_router(model_router, prefix="/api/v1")
 app.include_router(communication_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")

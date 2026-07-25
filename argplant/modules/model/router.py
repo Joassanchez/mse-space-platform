@@ -20,6 +20,7 @@ from argplant.modules.model.models import PredictRequest, PredictResponse
 from argplant.shared.cache import _get_redis
 from argplant.shared.config import settings
 from argplant.shared.database import async_session
+from argplant.shared.llm import get_llm_client
 
 logger = logging.getLogger("argplant.model")
 
@@ -76,11 +77,17 @@ async def predict(request: PredictRequest) -> PredictResponse:
         ) from exc
 
     # 3. Auto-generate alerts from anomalies (async fire-and-forget)
+    llm_client = None
+    try:
+        llm_client = get_llm_client()
+    except Exception:
+        pass  # LLM not configured — alerts use raw messages
+
     for anomaly in result.anomalies:
         if anomaly.severity in ("critical", "high"):
             try:
                 async with async_session() as session:
-                    svc = AlertService(session)
+                    svc = AlertService(session, llm_client=llm_client)
                     region_id = hash(request.lot_id) % 10000  # map lot_id to int
                     await svc.create(AlertCreate(
                         region_id=region_id,

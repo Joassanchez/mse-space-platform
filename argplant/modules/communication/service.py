@@ -1,8 +1,8 @@
-"""Alert service with deduplication and PostgreSQL NOTIFY support.
+"""Alert service with deduplication, PostgreSQL NOTIFY, and optional LLM enrichment.
 
 - Deduplicates: same alert_type + region_id within DEDUP_WINDOW_HOURS → update metadata
 - NOTIFY: fires PostgreSQL LISTEN/NOTIFY for real-time SSE push
-- Can enrich alert text via LLM when configured
+- Enrichment: uses LLM to generate human-readable alert messages when configured
 """
 
 from __future__ import annotations
@@ -29,15 +29,23 @@ DEDUP_WINDOW_HOURS = 8
 class AlertService:
     """Manage alert creation, deduplication, and NOTIFY dispatch."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, llm_client=None) -> None:
         self._session = session
+        self._llm = llm_client
 
     async def create(self, data: AlertCreate) -> AlertResponse:
         """Create an alert with deduplication.
 
         If an active alert of the same type+region exists within the dedup
         window, its metadata is merged instead of creating a duplicate.
+
+        When an LLM client is available, the message is enriched with
+        a human-readable, actionable description.
         """
+        # Enrich message with LLM if available
+        if self._llm:
+            data = await self._enrich(data)
+
         cutoff = datetime.now(timezone.utc) - timedelta(hours=DEDUP_WINDOW_HOURS)
 
         # Check for existing active alert
@@ -105,6 +113,27 @@ class AlertService:
         alert.updated_at = datetime.now(timezone.utc)
         await self._session.flush()
         return self._to_response(alert)
+
+    async def _enrich(self, data: AlertCreate) -> AlertCreate:
+        """Use LLM to generate a human-readable alert message."""
+        try:
+            prompt = (
+                f"Eres un ingeniero agrónomo experto en soja y maíz en la Pampa Húmeda argentina.\n"
+                f"Generá un mensaje de alerta claro y accionable para un productor agropecuario.\n\n"
+                f"Tipo de alerta: {data.alert_type}\n"
+                f"Severidad: {data.severity}\n"
+                f"Título: {data.title}\n"
+                f"Datos técnicos: {json.dumps(data.metadata_ or {})}\n\n"
+                f"El mensaje debe ser en español, directo, y decir QUÉ hacer (no solo qué pasa). "
+                f"Máximo 2 oraciones."
+            )
+            enriched = await self._llm.generate(prompt)
+            if enriched and len(enriched) > 10:
+                data.message = enriched.strip()
+        except Exception:
+            logger.debug("LLM enrichment failed, using raw message")
+
+        return data
 
     @staticmethod
     async def _notify(alert: Alert) -> None:
