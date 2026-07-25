@@ -754,7 +754,7 @@ document.getElementById('btn-notif')?.addEventListener('click', () => {
 });
 
 /* ============================================
-   ARGPLANT Dashboard — Análisis Predictivo
+   ARGPLANT Dashboard — Full Data Integration
    ============================================ */
 
 const API_BASE = '/api/v1';
@@ -790,52 +790,262 @@ async function fetchPrediction() {
   } catch (err) { console.warn('Predict:', err); return null; }
 }
 
-function updateKPIs(data) {
-  if (!data) return;
-  const smEl = document.querySelector('.kpi-card:nth-child(1) .kpi-value');
-  const smSub = document.querySelector('.kpi-card:nth-child(1) .kpi-subtitle');
-  const smBar = document.querySelector('.kpi-card:nth-child(1) .kpi-bar-fill');
-  const smAnomaly = data.anomalies?.find(a => a.type === 'water_stress');
-  if (smAnomaly && smEl) {
-    const pct = smAnomaly.evidence?.soil_moisture_pct || Math.round((smAnomaly.evidence?.soil_moisture || 0.2) * 100);
-    smEl.innerHTML = `${pct}<span class="kpi-unit">%</span>`;
-    if (smBar) smBar.style.width = `${Math.min(100, pct * 2)}%`;
-  }
-  if (smAnomaly && smSub) smSub.textContent = smAnomaly.description;
+/* ── KPI 1: Soil Moisture ── */
+function updateKPISoilMoisture(predict, analysis) {
+  const el = document.querySelector('.kpi-card:nth-child(1) .kpi-value');
+  const sub = document.querySelector('.kpi-card:nth-child(1) .kpi-subtitle');
+  const bar = document.querySelector('.kpi-card:nth-child(1) .kpi-bar-fill');
+  const change = document.querySelector('.kpi-card:nth-child(1) .kpi-change');
 
-  if (data.risk_assessment) {
-    const riskEl = document.querySelector('.kpi-card:nth-child(2) .kpi-value');
-    const riskScore = document.querySelector('.kpi-card:nth-child(2) .kpi-score');
-    if (riskEl) riskEl.textContent = data.risk_assessment.overall === 'critical' ? 'Crítico' : data.risk_assessment.overall === 'high' ? 'Alto' : 'Medio';
-    if (riskScore) riskScore.textContent = `Score: ${data.risk_assessment.score}`;
+  const smValue = analysis?.satellite?.soil_moisture_value;
+  if (smValue?.soil_moisture != null) {
+    const pct = Math.round(smValue.soil_moisture * 100);
+    if (el) el.innerHTML = `${pct}<span class="kpi-unit">%</span>`;
+    if (bar) bar.style.width = `${Math.min(100, pct * 2.5)}%`;
+    if (sub) sub.textContent = `Fuente: ${smValue.source || 'SMAP'} — ${smValue.acquisition_date || ''}`;
+  } else {
+    const anomaly = predict?.anomalies?.find(a => a.type === 'water_stress');
+    if (anomaly && el) {
+      const pct = anomaly.evidence?.soil_moisture_pct || 20;
+      el.innerHTML = `${pct}<span class="kpi-unit">%</span>`;
+      if (bar) bar.style.width = `${Math.min(100, pct * 2)}%`;
+      if (sub) sub.textContent = anomaly.description;
+    }
   }
-
-  if (data.yield_prediction) {
-    const lossEl = document.querySelector('.kpi-card:nth-child(3) .kpi-value');
-    if (lossEl) lossEl.innerHTML = `${data.yield_prediction.loss_pct}<span class="kpi-unit">%</span>`;
-  }
-
-  if (data.economic_impact) {
-    const econEl = document.querySelector('.kpi-card:nth-child(4) .kpi-value');
-    const lossM = Math.round(data.economic_impact.estimated_loss_ars / 1000000);
-    if (econEl) econEl.innerHTML = `-$${lossM}M`;
+  if (change && smValue && smValue.soil_moisture < 0.22) {
+    change.innerHTML = `<span class="material-symbols-outlined">arrow_downward</span> Bajo`;
+    change.className = 'kpi-change negative';
   }
 }
 
+/* ── KPI 2: Risk ── */
+function updateKPIRisk(predict) {
+  const el = document.querySelector('.kpi-card:nth-child(2) .kpi-value');
+  const scoreEl = document.querySelector('.kpi-card:nth-child(2) .kpi-score');
+  const sub = document.querySelector('.kpi-card:nth-child(2) .kpi-subtitle');
+  const segs = document.querySelectorAll('.kpi-card:nth-child(2) .segment');
+
+  if (!predict?.risk_assessment) return;
+  const r = predict.risk_assessment;
+  const labels = { critical: 'Crítico', high: 'Alto', medium: 'Medio', low: 'Bajo' };
+  if (el) el.textContent = labels[r.overall] || r.overall;
+  if (scoreEl) scoreEl.textContent = `Score: ${r.score}`;
+  if (sub && r.factors?.length) {
+    sub.textContent = `Factor principal: ${r.factors[0].name.replace('_',' ')} (${r.factors[0].score})`;
+  }
+  // Risk segments
+  const level = r.score >= 75 ? 2 : r.score >= 40 ? 3 : r.score >= 10 ? 4 : 5;
+  segs.forEach((s, i) => {
+    s.className = i < level ? (i < 2 ? 'segment active-green' : i < 3 ? 'segment active-amber' : 'segment') : 'segment';
+  });
+}
+
+/* ── KPI 3: Weather ── */
+function updateKPIWeather(analysis) {
+  const el = document.querySelector('.kpi-card:nth-child(3) .kpi-value');
+  const sub = document.querySelector('.kpi-card:nth-child(3) .kpi-subtitle');
+  const label = document.querySelector('.kpi-card:nth-child(3) .kpi-label');
+
+  if (label) label.textContent = 'TEMPERATURA ACTUAL';
+  const current = analysis?.agroclimate?.current;
+  if (current?.temp != null) {
+    if (el) el.innerHTML = `${current.temp}<span class="kpi-unit">°C</span>`;
+    if (sub) sub.textContent = `Humedad: ${current.humidity || '?'}% · Viento: ${current.wind_speed || '?'} km/h`;
+  } else {
+    if (el) el.textContent = '—';
+  }
+}
+
+/* ── KPI 4: Economy ── */
+function updateKPIEconomy(analysis, predict) {
+  const el = document.querySelector('.kpi-card:nth-child(4) .kpi-value');
+  const sub = document.querySelector('.kpi-card:nth-child(4) .kpi-subtitle');
+  const label = document.querySelector('.kpi-card:nth-child(4) .kpi-label');
+
+  const price = analysis?.economy?.latest_price || predict?.economic_impact;
+  if (predict?.economic_impact?.estimated_loss_ars > 0) {
+    if (label) label.textContent = 'PÉRDIDA PROYECTADA';
+    const lossM = Math.round(predict.economic_impact.estimated_loss_ars / 1000000);
+    if (el) el.innerHTML = `-$${lossM}M`;
+    if (sub) sub.textContent = `ARS Estimados / Campaña`;
+  } else if (price?.promedio) {
+    if (label) label.textContent = 'PRECIO SOJA (MATba)';
+    if (el) el.innerHTML = `$${price.promedio.toLocaleString()}<span class="kpi-unit">/ton</span>`;
+    if (sub) sub.textContent = `Fecha: ${price.fecha || ''}`;
+  }
+}
+
+/* ── AI Synthesis ── */
+function updateSynthesis(analysis, predict) {
+  const banner = document.querySelector('#ai-synthesis .ai-synthesis-content p');
+  if (!banner) return;
+  const q = getPredictParams();
+  const cropName = q.crop === 'soy' ? 'Soja' : 'Maíz';
+  const stage = analysis?.agronomy?.current_stage;
+  const current = analysis?.agroclimate?.current;
+  const risk = predict?.risk_assessment?.overall || '—';
+  const rec = predict?.recommendations?.[0]?.action || 'Continuar monitoreo.';
+
+  banner.innerHTML = `
+    <strong>Síntesis IA:</strong> El lote
+    <span class="inline-badge">${q.lot_id} (${cropName})</span>
+    ${stage ? `está en etapa <span class="inline-badge">${stage.name || stage.bbch_code} (BBCH ${stage.bbch_code})</span>` : ''}
+    ${current?.temp != null ? `con <strong>${current.temp}°C</strong> y <strong>${current.humidity}%</strong> de humedad.` : '.'}
+    Riesgo <strong>${risk}</strong>. ${rec}
+  `;
+}
+
+/* ── Technical Evidence ── */
+function updateTechEvidence(analysis, predict) {
+  const grid = document.querySelector('.tech-evidence-grid');
+  if (!grid) return;
+  const agro = analysis?.agroclimate || {};
+  const sat = analysis?.satellite || {};
+  const agron = analysis?.agronomy || {};
+  const econ = analysis?.economy || {};
+  const pred = predict || {};
+
+  const items = [];
+
+  // NDVI / soil moisture
+  const smVal = sat.soil_moisture_value;
+  if (smVal?.soil_moisture != null) {
+    items.push({ label: 'Humedad Suelo (SMAP)', value: `${(smVal.soil_moisture * 100).toFixed(0)}%`, cls: smVal.soil_moisture < 0.22 ? 'error' : '' });
+  }
+
+  // Precipitation
+  const hist = agro.historical || {};
+  if (hist.precipitation_15d_mm != null) {
+    items.push({ label: 'Precip. Acum. 15d', value: `${hist.precipitation_15d_mm} mm`, cls: hist.precipitation_15d_mm < 10 ? 'error' : '' });
+  }
+
+  // Temperature
+  const cur = agro.current || {};
+  if (cur.temp != null) {
+    items.push({ label: 'Temperatura Actual', value: `${cur.temp}°C`, cls: cur.temp > 35 ? 'error' : '' });
+  }
+
+  // BBCH stage
+  const stage = agron.current_stage;
+  if (stage) {
+    items.push({ label: 'Fase Fenológica', value: `${stage.name || ''} (BBCH ${stage.bbch_code})`, cls: '' });
+  }
+
+  // Yield
+  if (pred.yield_prediction) {
+    items.push({ label: 'Rinde Estimado', value: `${pred.yield_prediction.estimate_kg_ha} kg/ha`, cls: pred.yield_prediction.loss_pct > 10 ? 'error' : '' });
+    items.push({ label: 'Pérdida vs Potencial', value: `-${pred.yield_prediction.loss_pct}%`, cls: 'error' });
+  }
+
+  // Price
+  if (econ.latest_price?.promedio) {
+    items.push({ label: 'Precio Soja', value: `$${econ.latest_price.promedio.toLocaleString()}/ton`, cls: '' });
+  }
+
+  // Risk score
+  if (pred.risk_assessment) {
+    items.push({ label: 'Score de Riesgo', value: `${pred.risk_assessment.score}/100`, cls: pred.risk_assessment.score > 50 ? 'warning-val' : '' });
+  }
+
+  // NDVI (satellite scenes count)
+  if (sat.optical?.length) {
+    items.push({ label: 'Escenas Sentinel-2', value: `${sat.optical.length} disponibles`, cls: '' });
+  }
+
+  grid.innerHTML = items.map(i => `
+    <div class="tech-evidence-item">
+      <span class="tech-evidence-label">${i.label}</span>
+      <span class="tech-evidence-value${i.cls ? ' ' + i.cls : ''}">${i.value}</span>
+    </div>
+  `).join('');
+
+  // Data sources
+  const sources = document.querySelector('.tech-sources');
+  if (sources) {
+    const tags = [];
+    if (agro.current) tags.push('NASA POWER');
+    if (sat.soil_moisture_value) tags.push('SMAP');
+    if (sat.optical?.length) tags.push('Sentinel-2');
+    if (econ.latest_price) tags.push('MAGyP');
+    if (agron.crop_info) tags.push('INTA/FAO');
+    sources.innerHTML = tags.map(t => `<span class="tech-source-tag"><span class="material-symbols-outlined">satellite</span> ${t}</span>`).join('');
+  }
+}
+
+/* ── Alerts Panel ── */
 function updateAlertsPanel(data) {
   const alertsList = document.getElementById('alerts-list');
-  if (!alertsList || !data?.alerts?.length) return;
-  const sevClass = { critical: 'critical', high: 'warning', medium: 'warning' };
-  const sevBadge = { critical: 'CRÍTICO', high: 'PRECAUCIÓN', medium: 'INFO' };
+  const badge = document.querySelector('.alert-badge-count');
+  if (!alertsList) return;
+
+  if (!data?.alerts?.length) {
+    alertsList.innerHTML = '<p style="padding:1rem;color:var(--on-surface-variant);">Sin alertas activas para este lote.</p>';
+    if (badge) badge.textContent = '0 Nuevas';
+    return;
+  }
+
+  const sevClass = { critical: 'critical', high: 'warning', medium: 'warning', low: 'info' };
+  const sevBadge = { critical: 'CRÍTICO', high: 'PRECAUCIÓN', medium: 'INFO', low: 'INFO' };
   alertsList.innerHTML = data.alerts.map(a => `
-    <div class="alert-card ${sevClass[a.type] || 'info'}">
-      <div class="alert-stripe ${sevClass[a.type] || 'info'}"></div>
-      <div class="alert-top"><h3 class="alert-title">${a.title}</h3><span class="severity-badge ${sevClass[a.type] || 'info'}">${sevBadge[a.type] || 'INFO'}</span></div>
+    <div class="alert-card ${sevClass[a.severity] || sevClass[a.type] || 'info'}">
+      <div class="alert-stripe ${sevClass[a.severity] || sevClass[a.type] || 'info'}"></div>
+      <div class="alert-top"><h3 class="alert-title">${a.title}</h3><span class="severity-badge ${sevClass[a.severity] || sevClass[a.type] || 'info'}">${sevBadge[a.severity] || sevBadge[a.type] || 'INFO'}</span></div>
+      <div class="alert-audience">${(a.audience || ['PRODUCTOR']).map(t => `<span class="audience-tag">${t.toUpperCase()}</span>`).join('')}</div>
       <p class="alert-description">${a.message}</p>
-    </div>`).join('');
-  document.querySelector('.alert-badge-count').textContent = `${data.alerts.length} ${data.alerts.length === 1 ? 'Nueva' : 'Nuevas'}`;
+      ${a.evidence ? `
+      <div class="expandable-section" id="alert-detail-api-${a.type}">
+        <button class="expand-btn" onclick="toggleExpand('alert-detail-api-${a.type}')">
+          <span class="material-symbols-outlined">expand_more</span> Detalle técnico
+        </button>
+        <div class="expand-content">
+          <div class="tech-grid">
+            ${Object.entries(a.evidence || {}).map(([k, v]) => `
+              <div class="tech-item">
+                <span class="tech-label">${k}</span>
+                <span class="tech-value">${typeof v === 'number' ? v.toFixed(2) : v}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>` : ''}
+    </div>
+  `).join('');
+  if (badge) badge.textContent = `${data.alerts.length} ${data.alerts.length === 1 ? 'Nueva' : 'Nuevas'}`;
 }
 
+/* ── Recommendations ── */
+function updateRecommendations(predict) {
+  const desc = document.querySelector('.action-plan-desc');
+  const econDesc = document.querySelector('.econ-desc');
+  const econValue = document.querySelector('.econ-metric-value');
+  if (!predict) return;
+
+  if (desc && predict.recommendations?.length) {
+    const r = predict.recommendations[0];
+    desc.innerHTML = `${r.action}.`;
+  }
+  if (predict.economic_impact) {
+    if (econDesc) econDesc.innerHTML = `La ejecución de esta acción protege el potencial de rinde en un <strong>+${Math.round(predict.economic_impact.protected_value_ars / 1000000)}%</strong>.`;
+    if (econValue) econValue.textContent = `+$${Math.round(predict.economic_impact.protected_value_ars / 1000000)}M ARS`;
+  }
+}
+
+/* ── Filter Pills ── */
+function updateFilterPills(q) {
+  const pills = document.querySelectorAll('.filters-pills .pill');
+  if (pills.length >= 4) {
+    const cropName = q.crop === 'soy' ? 'Soja' : 'Maíz';
+    pills[0].innerHTML = `<span class="material-symbols-outlined pill-icon">location_on</span> Lote ${q.lot_id}`;
+    pills[1].innerHTML = `<span class="material-symbols-outlined pill-icon">my_location</span> ${q.lat.toFixed(4)}, ${q.lon.toFixed(4)}`;
+    pills[2].innerHTML = `<span class="material-symbols-outlined pill-icon">eco</span> ${cropName}`;
+    pills[3].innerHTML = `<span class="material-symbols-outlined pill-icon">calendar_today</span> ${q.date}`;
+  }
+  // Update breadcrumb
+  const bc = document.querySelector('.breadcrumb-item.active');
+  if (bc) bc.textContent = `${q.lot_id} — ${q.crop === 'soy' ? 'Soja' : 'Maíz'}`;
+}
+
+/* ── SSE ── */
 function connectSSE() {
   const es = new EventSource(`${API_BASE}/alerts/stream`);
   es.addEventListener('connected', () => console.log('SSE connected'));
@@ -848,14 +1058,28 @@ function connectSSE() {
   es.onerror = () => console.warn('SSE disconnected');
 }
 
+/* ── Main Runner ── */
 async function runPrediction() {
   const q = getPredictParams();
   showNotification(`🔄 Analizando lote ${q.lot_id} (${q.crop})...`, 'info');
-  const prediction = await fetchPrediction();
-  if (prediction) {
-    updateKPIs(prediction);
+
+  const [analysis, prediction] = await Promise.all([
+    fetchAnalysis(),
+    fetchPrediction(),
+  ]);
+
+  if (prediction || analysis) {
+    updateFilterPills(q);
+    updateKPISoilMoisture(prediction, analysis);
+    updateKPIRisk(prediction);
+    updateKPIWeather(analysis);
+    updateKPIEconomy(analysis, prediction);
+    updateSynthesis(analysis, prediction);
+    updateTechEvidence(analysis, prediction);
     updateAlertsPanel(prediction);
+    updateRecommendations(prediction);
   }
+
   showNotification('✅ Análisis completado', 'success');
 }
 
