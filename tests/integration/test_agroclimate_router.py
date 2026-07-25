@@ -6,6 +6,7 @@ mocked external HTTP clients so no real API keys are needed.
 
 from unittest.mock import AsyncMock, patch
 
+import fakeredis.aioredis
 import pytest
 from httpx import ASGITransport, AsyncClient
 
@@ -82,6 +83,17 @@ def mock_owm_failing():
     ) as mock:
         mock.side_effect = httpx.ConnectError("API unreachable")
         yield mock
+
+
+@pytest.fixture
+async def _mock_redis():
+    """Replace _get_redis with a fakeredis instance for integration tests."""
+    fake = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    with patch("argplant.shared.cache._get_redis", new=lambda: fake):
+        with patch("argplant.modules.agroclimate.router._get_redis", new=lambda: fake):
+            yield fake
+    await fake.flushall()
+    await fake.aclose()
 
 
 # ---------------------------------------------------------------------------

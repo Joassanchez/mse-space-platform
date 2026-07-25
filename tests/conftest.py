@@ -4,6 +4,7 @@ Provides async fixtures for test database, Redis, HTTP client, and mock settings
 """
 
 from collections.abc import AsyncGenerator
+from unittest.mock import patch
 
 import fakeredis.aioredis
 import pytest
@@ -84,3 +85,30 @@ def mock_settings() -> Settings:
         RATE_LIMIT_WINDOW_SECONDS=60,
         SATELLITE_STORAGE_PATH="/tmp/argplant-test",
     )
+
+
+# ---------------------------------------------------------------------------
+# Autouse: patch _get_redis with fakeredis for all integration tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _mock_redis_autouse():
+    """Replace _get_redis everywhere with a fakeredis client.
+
+    This prevents integration tests from requiring a real Redis server.
+    Module-level patches cover all known callers of _get_redis.
+    """
+    fake = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    targets = [
+        "argplant.shared.cache._get_redis",
+        "argplant.modules.agroclimate.router._get_redis",
+        "argplant.modules.economy.router._get_redis",
+        "argplant.modules.ingestion.cron._get_redis",
+    ]
+    patchers = [patch(t, new=lambda f=fake: f) for t in targets]
+    for p in patchers:
+        p.start()
+    yield
+    for p in reversed(patchers):
+        p.stop()
