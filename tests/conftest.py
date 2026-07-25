@@ -104,7 +104,7 @@ def _mock_redis_autouse():
         "argplant.shared.cache._get_redis",
         "argplant.modules.agroclimate.router._get_redis",
         "argplant.modules.economy.router._get_redis",
-        "argplant.modules.ingestion.cron._get_redis",
+        "argplant.modules.analysis.router._get_redis",
     ]
     patchers = [patch(t, new=lambda f=fake: f) for t in targets]
     for p in patchers:
