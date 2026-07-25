@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     SATELLITE_STORAGE_PATH: Path = Path("data/satellite")
 
     # Ingestion (Pergamino, Buenos Aires)
-    INGESTION_COORDS_LAT: float = -33.89
-    INGESTION_COORDS_LON: float = -60.57
+    INGESTION_COORDS_LAT: float = -33.9278607
+    INGESTION_COORDS_LON: float = -60.567172
     INGESTION_BBOX: str = "-61,-34,-60,-33"
 
     # Logging

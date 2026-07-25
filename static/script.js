@@ -585,7 +585,8 @@ function initModalHandlers() {
 
   if (btnIngresar) {
     btnIngresar.addEventListener('click', () => {
-      if (modal) modal.style.display = 'flex';
+      const predictModal = document.getElementById('predict-modal');
+      if (predictModal) predictModal.style.display = 'flex';
     });
   }
   if (btnClose) btnClose.addEventListener('click', closeModal);
@@ -762,8 +763,8 @@ function getPredictParams() {
   return {
     lot_id: document.getElementById('predict-lot-id')?.value || 'lote-123',
     crop: document.getElementById('predict-crop')?.value || 'soy',
-    lat: parseFloat(document.getElementById('predict-lat')?.value) || -33.89,
-    lon: parseFloat(document.getElementById('predict-lon')?.value) || -60.57,
+    lat: parseFloat(document.getElementById('predict-lat')?.value) || -33.9278607,
+    lon: parseFloat(document.getElementById('predict-lon')?.value) || -60.567172,
     date: document.getElementById('predict-date')?.value || '2026-07-21',
   };
 }
@@ -858,10 +859,7 @@ async function runPrediction() {
   showNotification('✅ Análisis completado', 'success');
 }
 
-// Modal handlers
-document.getElementById('btn-ingresar')?.addEventListener('click', () => {
-  document.getElementById('predict-modal').style.display = 'flex';
-});
+// Modal close handlers for predict modal
 document.getElementById('btn-close-predict-modal')?.addEventListener('click', () => {
   document.getElementById('predict-modal').style.display = 'none';
 });
