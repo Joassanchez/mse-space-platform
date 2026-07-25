@@ -16,6 +16,7 @@ from argplant.modules.agroclimate.service import (
     WeatherService,
 )
 from argplant.shared.cache import _get_redis
+from argplant.shared.config import settings
 from argplant.shared.middleware import add_stale_header
 
 logger = logging.getLogger("argplant.agroclimate")
@@ -55,6 +56,9 @@ async def get_weather(
     Responses include an X-Cache header (HIT/MISS) and, when stale data was
     served, an X-Stale: true header.
     """
+    if not settings.ENABLE_OPENWEATHER:
+        raise HTTPException(status_code=503, detail="OpenWeather source is disabled (ENABLE_OPENWEATHER=False)")
+
     service = await _get_weather_service()
     try:
         result, is_stale = await service.get(lat, lon)
@@ -90,6 +94,9 @@ async def get_power(
     param_list = [p.strip() for p in parameters.split(",") if p.strip()]
     if not param_list:
         raise HTTPException(status_code=422, detail="At least one parameter is required")
+
+    if not settings.ENABLE_NASA_POWER:
+        raise HTTPException(status_code=503, detail="NASA POWER source is disabled (ENABLE_NASA_POWER=False)")
 
     start = start_date.strftime("%Y%m%d")
     end = end_date.strftime("%Y%m%d")

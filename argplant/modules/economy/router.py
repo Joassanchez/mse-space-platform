@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 
 from argplant.modules.economy.service import PriceService, ServiceUnavailableError
 from argplant.shared.cache import _get_redis
+from argplant.shared.config import settings
 from argplant.shared.middleware import add_stale_header
 
 logger = logging.getLogger("argplant.economy")
@@ -36,6 +37,9 @@ async def get_prices(
     Data is cached in Redis (TTL 1h). On MAGyP failure, stale cache is
     returned with X-Stale: true. On cold cache + failure, returns 503.
     """
+    if not settings.ENABLE_MAGYP:
+        raise HTTPException(status_code=503, detail="MAGyP source is disabled (ENABLE_MAGYP=False)")
+
     service = await _get_price_service()
     try:
         result, is_stale = await service.get(producto, puerto, desde, hasta)

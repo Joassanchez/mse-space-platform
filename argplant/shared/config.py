@@ -54,6 +54,15 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list[str] = ["*"]
 
+    # ------------------------------------------------------------------
+    # Feature flags — disable sources you don't have credentials for yet
+    # ------------------------------------------------------------------
+    ENABLE_OPENWEATHER: bool = True
+    ENABLE_NASA_POWER: bool = True
+    ENABLE_SMAP: bool = True
+    ENABLE_SENTINEL: bool = True
+    ENABLE_MAGYP: bool = True
+
 
 # Singleton
 settings = Settings()

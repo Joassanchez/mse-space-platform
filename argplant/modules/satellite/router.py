@@ -68,6 +68,9 @@ async def search_smap(
     session: AsyncSession = Depends(get_session),
 ) -> list[SmSceneMeta]:
     """Search SMAP L3 soil moisture granules for a bounding box and date range."""
+    if not settings.ENABLE_SMAP:
+        raise HTTPException(status_code=503, detail="SMAP source is disabled (ENABLE_SMAP=False)")
+
     service = await _get_smap_service()
     try:
         results = await service.search(
@@ -114,6 +117,9 @@ async def search_sentinel(
             detail="platform must be 'sentinel-1' or 'sentinel-2'",
         )
 
+    if not settings.ENABLE_SENTINEL:
+        raise HTTPException(status_code=503, detail="Sentinel source is disabled (ENABLE_SENTINEL=False)")
+
     service = await _get_sentinel_service()
     try:
         results = await service.search_catalog(
@@ -145,6 +151,9 @@ async def enqueue_download(
     Returns a 202 with the job ID for status tracking.
     Returns 404 if the scene has not been previously catalogued.
     """
+    if not settings.ENABLE_SENTINEL:
+        raise HTTPException(status_code=503, detail="Sentinel source is disabled (ENABLE_SENTINEL=False)")
+
     service = await _get_sentinel_service()
     scene = await service.validate_scene(session, scene_id)
     if scene is None:
