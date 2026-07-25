@@ -1,4 +1,4 @@
-.PHONY: up down test lint seed migrate migration setup
+.PHONY: up down worker test lint seed migrate migration setup
 
 .env:
 	@echo "📋 Creando .env desde .env.example..."
@@ -13,6 +13,9 @@ up: .env
 
 down:
 	docker compose down
+
+worker:
+	docker compose up -d worker
 
 test:
 	docker compose run --rm api pytest tests/ -v

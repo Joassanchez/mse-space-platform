@@ -38,11 +38,10 @@ services:
     volumes:
       - ./data:/app/data
 
-  # worker:
-  #   <<: *api
-  #   ports: []
-  #   command: arq argplant.modules.ingestion.worker.WorkerSettings
-  # Uncoment after Phase 5 (ingestion pipeline)
+  worker:
+    <<: *api
+    ports: []
+    command: arq argplant.modules.ingestion.worker.WorkerSettings
 
 volumes:
   pgdata:
