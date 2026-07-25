@@ -25,11 +25,12 @@ async def lifespan(app: FastAPI):
     logger.info("ARGPLANT Data Service starting up")
     logger.info("Log level: %s", settings.LOG_LEVEL)
 
-    # Placeholder: seed data loading is added as modules are implemented
-    # from argplant.modules.agronomy.seed_data import load_agronomy_seeds
-    # from argplant.modules.economy.seed_data import load_economy_seeds
-    # load_agronomy_seeds()
-    # load_economy_seeds()
+    # Load seed data for agronomy and economy modules
+    from argplant.modules.agronomy.seed_data import load_agronomy_seeds
+    from argplant.modules.economy.seed_data import load_economy_seeds
+
+    load_agronomy_seeds()
+    load_economy_seeds()
 
     yield
 
@@ -70,14 +71,14 @@ async def health_check() -> JSONResponse:
 
 # Router mounts — uncommented as modules are implemented
 from argplant.modules.agroclimate.router import router as agroclimate_router
+from argplant.modules.agronomy.router import router as agronomy_router
+from argplant.modules.economy.router import router as economy_router
 from argplant.modules.satellite.router import router as satellite_router
 
-# from argplant.modules.agronomy.router import router as agronomy_router
-# from argplant.modules.economy.router import router as economy_router
 # from argplant.modules.ingestion.router import router as ingestion_router
 
 app.include_router(agroclimate_router, prefix="/api/v1/agroclimate")
+app.include_router(agronomy_router, prefix="/api/v1/agronomy")
+app.include_router(economy_router, prefix="/api/v1/economy")
 app.include_router(satellite_router, prefix="/api/v1/satellite")
-# app.include_router(agronomy_router, prefix="/api/v1/agronomy")
-# app.include_router(economy_router, prefix="/api/v1/economy")
 # app.include_router(ingestion_router, prefix="/api/v1")

@@ -289,7 +289,7 @@ main
 
 ### Agronomy — Seed Data
 
-- [ ] 4.1 Create `data/agronomy/crops.yaml` with soy and corn entries (id, name, scientific_name). Create `data/agronomy/bbch_stages.yaml` with BBCH stages including kc, temp_min, temp_max, temp_opt per stage.
+- [x] 4.1 Create `data/agronomy/crops.yaml` with soy and corn entries (id, name, scientific_name). Create `data/agronomy/bbch_stages.yaml` with BBCH stages including kc, temp_min, temp_max, temp_opt per stage.
   - **Files**: `data/agronomy/crops.yaml`, `data/agronomy/bbch_stages.yaml`
   - **Spec**: Seed Data at Startup, Crop Listing, Crop Stage Detail
   - **Lines**: ~60
@@ -297,25 +297,25 @@ main
 
 ### Agronomy — Module
 
-- [ ] 4.2 Create `argplant/modules/agronomy/__init__.py`, `argplant/modules/agronomy/models.py` — Pydantic: `Crop`, `GrowthStage`. No SQLAlchemy models (in-memory only).
+- [x] 4.2 Create `argplant/modules/agronomy/__init__.py`, `argplant/modules/agronomy/models.py` — Pydantic: `Crop`, `GrowthStage`. No SQLAlchemy models (in-memory only).
   - **Files**: `argplant/modules/agronomy/__init__.py`, `argplant/modules/agronomy/models.py`
   - **Spec**: Crop Listing, Crop Stage Detail
   - **Lines**: ~30
   - **Verify**: Schemas validate correctly
 
-- [ ] 4.3 Create `argplant/modules/agronomy/seed_data.py` — `load_agronomy_seeds()`: reads `data/agronomy/crops.yaml` + `bbch_stages.yaml`, populates module-level dict. Raises on missing/malformed files (fails startup).
+- [x] 4.3 Create `argplant/modules/agronomy/seed_data.py` — `load_agronomy_seeds()`: reads `data/agronomy/crops.yaml` + `bbch_stages.yaml`, populates module-level dict. Raises on missing/malformed files (fails startup).
   - **Files**: `argplant/modules/agronomy/seed_data.py`
   - **Spec**: Seed Data at Startup
   - **Lines**: ~35
   - **Verify**: Unit test: valid fixtures load; missing file raises
 
-- [ ] 4.4 Create `argplant/modules/agronomy/service.py` — `CropCatalogService.list_crops()`, `.get_stages(crop_id)`: reads from in-memory dict.
+- [x] 4.4 Create `argplant/modules/agronomy/service.py` — `CropCatalogService.list_crops()`, `.get_stages(crop_id)`: reads from in-memory dict.
   - **Files**: `argplant/modules/agronomy/service.py`
   - **Spec**: Crop Listing, Crop Stage Detail
   - **Lines**: ~25
   - **Verify**: Unit test: list returns soy+corn; get_stages returns BBCH data; unknown crop → None
 
-- [ ] 4.5 Create `argplant/modules/agronomy/router.py` — `GET /api/v1/agronomy/crops` → list[Crop]. `GET /api/v1/agronomy/crops/{id}/stages` → list[GrowthStage] or 404. Wire into main.py lifespan (call load_agronomy_seeds).
+- [x] 4.5 Create `argplant/modules/agronomy/router.py` — `GET /api/v1/agronomy/crops` → list[Crop]. `GET /api/v1/agronomy/crops/{id}/stages` → list[GrowthStage] or 404. Wire into main.py lifespan (call load_agronomy_seeds).
   - **Files**: `argplant/modules/agronomy/router.py`, modify `argplant/main.py`
   - **Spec**: Crop Listing, Crop Stage Detail, Seed Data at Startup
   - **Lines**: ~30
@@ -323,7 +323,7 @@ main
 
 ### Economy — Seed Data
 
-- [ ] 4.6 Create `data/economy/products.yaml` (soy=18, corn, wheat, sunflower with IDs). Create `data/economy/ports.yaml` (Rosario=23 + others).
+- [x] 4.6 Create `data/economy/products.yaml` (soy=18, corn, wheat, sunflower with IDs). Create `data/economy/ports.yaml` (Rosario=23 + others).
   - **Files**: `data/economy/products.yaml`, `data/economy/ports.yaml`
   - **Spec**: Product and Port ID Mapping
   - **Lines**: ~25
@@ -331,37 +331,37 @@ main
 
 ### Economy — Module
 
-- [ ] 4.7 Create `argplant/modules/economy/__init__.py`, `argplant/modules/economy/models.py` — SQLAlchemy `PriceSeries` (producto_id, puerto_id, fecha, minimo, maximo, promedio, modal). Pydantic: `PriceSeriesResponse`, `PricePoint`.
+- [x] 4.7 Create `argplant/modules/economy/__init__.py`, `argplant/modules/economy/models.py` — SQLAlchemy `PriceSeries` (producto_id, puerto_id, fecha, minimo, maximo, promedio, modal). Pydantic: `PriceSeriesResponse`, `PricePoint`.
   - **Files**: `argplant/modules/economy/__init__.py`, `argplant/modules/economy/models.py`
   - **Spec**: Daily Price Series Retrieval
   - **Lines**: ~40
   - **Verify**: Models importable
 
-- [ ] 4.8 Create `argplant/modules/economy/seed_data.py` — `load_economy_seeds()`: reads product/port YAML, populates ID-to-name mapping dict.
+- [x] 4.8 Create `argplant/modules/economy/seed_data.py` — `load_economy_seeds()`: reads product/port YAML, populates ID-to-name mapping dict.
   - **Files**: `argplant/modules/economy/seed_data.py`
   - **Spec**: Product and Port ID Mapping
   - **Lines**: ~25
   - **Verify**: Unit test: mappings loaded correctly
 
-- [ ] 4.9 Create `argplant/modules/economy/client.py` — `MagypClient.fetch(producto, puerto, desde, hasta)`: httpx POST to Monitor de Granos endpoint, 10s timeout, tenacity retry. Returns raw dict.
+- [x] 4.9 Create `argplant/modules/economy/client.py` — `MagypClient.fetch(producto, puerto, desde, hasta)`: httpx POST to Monitor de Granos endpoint, 10s timeout, tenacity retry. Returns raw dict.
   - **Files**: `argplant/modules/economy/client.py`
   - **Spec**: Daily Price Series Retrieval
   - **Lines**: ~40
   - **Verify**: Unit test: mocked POST → correct parsing
 
-- [ ] 4.10 Create `argplant/modules/economy/repository.py` — `PriceSeriesRepo.upsert(session, series)`, `get_series(session, producto_id, puerto_id, desde, hasta)`.
+- [x] 4.10 Create `argplant/modules/economy/repository.py` — `PriceSeriesRepo.upsert(session, series)`, `get_series(session, producto_id, puerto_id, desde, hasta)`.
   - **Files**: `argplant/modules/economy/repository.py`
   - **Spec**: Daily Price Series Retrieval (persistence)
   - **Lines**: ~35
   - **Verify**: Unit test: upsert + query roundtrip
 
-- [ ] 4.11 Create `argplant/modules/economy/service.py` — `PriceService.get(producto, puerto, desde, hasta)`: validate product/port IDs → check cache → MagypClient.fetch → normalize → repo.upsert → cache.set. On fail: stale cache + X-Stale or 503.
+- [x] 4.11 Create `argplant/modules/economy/service.py` — `PriceService.get(producto, puerto, desde, hasta)`: validate product/port IDs → check cache → MagypClient.fetch → normalize → repo.upsert → cache.set. On fail: stale cache + X-Stale or 503.
   - **Files**: `argplant/modules/economy/service.py`
   - **Spec**: Daily Price Series Retrieval (all scenarios)
   - **Lines**: ~55
   - **Verify**: Unit test: cache hit/miss/stale paths; unknown product → 400
 
-- [ ] 4.12 Create `argplant/modules/economy/router.py` — `GET /api/v1/economy/prices` (producto, puerto, desde, hasta) → PriceSeriesResponse or 400 for unknown IDs. Wire into main.py.
+- [x] 4.12 Create `argplant/modules/economy/router.py` — `GET /api/v1/economy/prices` (producto, puerto, desde, hasta) → PriceSeriesResponse or 400 for unknown IDs. Wire into main.py.
   - **Files**: `argplant/modules/economy/router.py`, modify `argplant/main.py`
   - **Spec**: Daily Price Series Retrieval, Product and Port ID Mapping
   - **Lines**: ~30
@@ -369,19 +369,19 @@ main
 
 ### Tests
 
-- [ ] 4.13 Create `tests/unit/test_agronomy.py` — test seed loading, CropCatalogService list/stages, unknown crop handling.
+- [x] 4.13 Create `tests/unit/test_agronomy.py` — test seed loading, CropCatalogService list/stages, unknown crop handling.
   - **Files**: `tests/unit/test_agronomy.py`
   - **Spec**: Crop Listing, Crop Stage Detail, Seed Data at Startup
   - **Lines**: ~35
   - **Verify**: All pass
 
-- [ ] 4.14 Create `tests/unit/test_economy_service.py` — test PriceService: cache paths, ID validation, stale fallback.
+- [x] 4.14 Create `tests/unit/test_economy_service.py` — test PriceService: cache paths, ID validation, stale fallback.
   - **Files**: `tests/unit/test_economy_service.py`
   - **Spec**: Daily Price Series Retrieval, Product and Port ID Mapping
   - **Lines**: ~40
   - **Verify**: All pass
 
-- [ ] 4.15 Create `tests/integration/test_agronomy_economy_router.py` — test all agronomy + economy endpoints via TestClient.
+- [x] 4.15 Create `tests/integration/test_agronomy_economy_router.py` — test all agronomy + economy endpoints via TestClient.
   - **Files**: `tests/integration/test_agronomy_economy_router.py`
   - **Spec**: All agronomy/economy scenarios
   - **Lines**: ~50
