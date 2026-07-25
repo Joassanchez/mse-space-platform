@@ -1102,32 +1102,53 @@ function updateFilterPills(q) {
 
 /* ── Map Update ── */
 function updateMap(lat, lon) {
+  const mapContainer = document.getElementById('map-container');
   const mapImage = document.getElementById('map-image');
-  if (!mapImage) return;
-
-  // Static map tile from OpenStreetMap centered on coordinates (zoom level 12)
-  const zoom = 13;
-  const tileUrl = `https://tile.openstreetmap.org/${zoom}/${lon2tile(lon, zoom)}/${lat2tile(lat, zoom)}.png`;
-  
-  // Use a proper static map service or just update the marker position
-  // For now, update the background to show the general area
-  mapImage.style.backgroundImage = `url('https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=12&size=800x600&markers=${lat},${lon},red-pushpin')`;
-  
-  // Update marker positions relative to the map container
-  const markers = document.querySelectorAll('.map-marker');
-  if (markers.length >= 2) {
-    // Center marker at 50%, 50% of the container
-    markers[0].style.top = '45%';
-    markers[0].style.left = '48%';
-    markers[0].title = `Lote (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
-  }
-  
-  // Update legend text
   const legendTitle = document.querySelector('.legend-title');
-  if (legendTitle) legendTitle.textContent = `NDVI — ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  const markers = document.querySelectorAll('.map-marker');
+
+  if (!mapContainer) return;
+
+  // Build a tile-based OpenStreetMap view using CSS background
+  // OSM tile: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+  const zoom = 13;
+  const x = lon2tile(lon, zoom);
+  const y = lat2tile(lat, zoom);
+  const tileUrl = `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
+
+  if (mapImage) {
+    mapImage.style.backgroundImage = `url('${tileUrl}')`;
+    mapImage.style.backgroundSize = 'cover';
+    mapImage.style.backgroundPosition = 'center';
+  }
+
+  // Update map container overlay with coordinate info
+  let infoOverlay = document.getElementById('map-coord-info');
+  if (!infoOverlay) {
+    infoOverlay = document.createElement('div');
+    infoOverlay.id = 'map-coord-info';
+    Object.assign(infoOverlay.style, {
+      position: 'absolute', bottom: '50px', left: '16px',
+      background: 'rgba(0,0,0,0.7)', color: '#fff',
+      padding: '6px 12px', borderRadius: '8px',
+      fontSize: '11px', fontFamily: 'JetBrains Mono, monospace',
+      zIndex: '10',
+    });
+    mapContainer.appendChild(infoOverlay);
+  }
+  infoOverlay.textContent = `📍 ${lat.toFixed(4)}°, ${lon.toFixed(4)}° · Zoom ${zoom}`;
+
+  // Position marker at center of map
+  if (markers.length >= 1) {
+    markers[0].style.top = '42%';
+    markers[0].style.left = '46%';
+    markers[0].title = `Lote (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+    markers[0].style.display = 'flex';
+  }
+
+  if (legendTitle) legendTitle.textContent = `NDVI — ${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
 }
 
-// Tile conversion helpers
 function lon2tile(lon, zoom) {
   return Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
 }
