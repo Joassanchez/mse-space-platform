@@ -26,24 +26,113 @@
 
 ---
 
+## Nuestra visión
+
+Desde el equipo de **MSE-SPACE** entendemos que el verdadero desafío no radica únicamente en acceder a grandes volúmenes de información, sino en transformarlos en herramientas que permitan tomar mejores decisiones.
+
+Con esa premisa desarrollamos una propuesta que evoluciona nuestra plataforma hacia un producto de mayor alcance, integrando fuentes de información abiertas, consolidadas y validadas por organismos y profesionales del sector agropecuario. El objetivo es construir una base de datos confiable, estandarizada y reutilizable que pueda ser consumida por múltiples soluciones.
+
+Como demostración de su potencial, desarrollamos un caso de uso integral que valida las capacidades de la plataforma mediante un sistema de apoyo a la toma de decisiones asistido por Inteligencia Artificial. Este producto complementario transforma datos satelitales, climáticos, agronómicos y económicos en recomendaciones accionables para productores, ingenieros agrónomos e instituciones.
+
+De esta manera, **ARGPLANT Data Access** se posiciona como el producto principal de la solución, mientras que el **Decision Intelligence Dashboard** representa una implementación concreta que demuestra cómo esa infraestructura de datos puede convertirse en inteligencia aplicada para el sector agropecuario.
+
 ## 🚜 Descripción del Producto
 
-### El problema
+## ARGPLANT Data Access
 
-Un productor agropecuario en la Pampa Húmeda toma más de 40 decisiones críticas por campaña —cuándo sembrar, si regar, cuándo aplicar fitosanitarios, cuándo cosechar—. Cada decisión se basa en datos que hoy están dispersos en múltiples fuentes: el servicio meteorológico, los satélites de NASA y Copernicus, los reportes del INTA, los precios del Monitor de Granos del MAGyP. **Nadie los unifica.** El productor termina decidiendo a ojo. Un error en etapa de floración puede costarle hasta el 25% del rinde.
+**La plataforma de datos agrícolas que transforma información satelital en decisiones inteligentes.**
 
-### La solución
+## El desafío
 
-**ARGPLANT AI** integra datos satelitales, agroclimáticos, agronómicos y económicos en una sola API. Un motor de reglas agronómicas detecta anomalías antes de que sean visibles a simple vista, y una capa de inteligencia artificial —potenciada por Gemini— genera **recomendaciones accionables en español**, en tiempo real.
+Cada campaña agrícola genera millones de datos provenientes de satélites, estaciones meteorológicas, organismos públicos y modelos agronómicos.
 
-### ARGPLANT Data Service: el producto standalone
+Sin embargo, estos datos se encuentran dispersos, utilizan distintos formatos y requieren conocimientos técnicos para ser interpretados.
 
-El corazón del sistema es **ARGPLANT Data Service**, una API REST de datos agrícolas que **puede funcionar como producto independiente**. Si el proyecto de IA completo no llega a completarse, esta capa de datos ya es un entregable de valor por sí solo:
+El verdadero problema no es la falta de información.
 
-- **Datos abiertos, unificados, normalizados** — NASA POWER, Sentinel, SMAP, MAGyP, todo en JSON limpio.
-- **OpenAPI/Swagger** — documentación interactiva lista para ser consumida por cualquier frontend, app móvil o dashboard.
-- **Gratuito y público** — todas las fuentes son de acceso libre, sin licencias privadas.
-- **Modular y extensible** — cada fuente de datos es un módulo independiente que puede activarse o desactivarse por configuración.
+Es la dificultad para acceder a ella de forma integrada, confiable y lista para generar valor.
+
+Hoy un productor, un ingeniero agrónomo o una empresa AgTech deben consultar múltiples APIs, descargar imágenes satelitales, interpretar indicadores y desarrollar su propia infraestructura antes de poder tomar una decisión.
+
+Eso implica tiempo, costos y una enorme barrera tecnológica.
+
+## Nuestra propuesta
+
+## ARGPLANT Data Access
+
+ARGPLANT Data Access es una plataforma de integración de datos agrícolas que unifica información proveniente de múltiples fuentes abiertas en una única API estandarizada.
+
+La plataforma abstrae la complejidad técnica de cada proveedor de datos y entrega información consistente, documentada y preparada para ser utilizada por cualquier aplicación.
+
+Actualmente integra:
+
+- NASA POWER
+- Sentinel (Copernicus)
+- SMAP
+- MAGyP
+- OpenWeather
+- Modelos agronómicos INTA / FAO
+
+Todo disponible mediante una API REST documentada con OpenAPI.
+
+El objetivo es que cualquier desarrollador, empresa o institución pueda construir soluciones agrícolas sin tener que integrar individualmente cada fuente de información.
+
+## Decision Intelligence Dashboard
+
+Como demostración del potencial de ARGPLANT Data Access desarrollamos una aplicación de apoyo a la toma de decisiones basada en Inteligencia Artificial.
+
+Este dashboard consume exclusivamente la información provista por Data Access y la transforma en conocimiento accionable para el productor.
+
+La plataforma permite:
+
+- visualizar el estado completo de un lote
+- detectar anomalías antes de que sean visibles
+- estimar riesgo productivo
+- calcular impacto económico potencial
+- generar alertas inteligentes
+- recomendar acciones utilizando IA Generativa
+
+En lugar de presentar únicamente indicadores técnicos, el sistema responde la pregunta que realmente necesita responder un productor:
+
+> **¿Cuál es la mejor decisión que puedo tomar hoy para este lote?**
+
+La Inteligencia Artificial interpreta el contexto completo utilizando información satelital, climática, agronómica y económica para generar recomendaciones claras, priorizadas y justificadas.
+
+## Arquitectura del producto
+
+ARGPLANT está compuesto por dos capas claramente diferenciadas.
+
+## ARGPLANT Data Access
+
+Producto principal.
+
+Responsable de:
+
+- integración de datos
+- normalización
+- estandarización
+- acceso mediante API
+- documentación OpenAPI
+- escalabilidad
+- reutilización por terceros
+
+Puede comercializarse o utilizarse como plataforma independiente.
+
+## Decision Intelligence
+
+Producto construido sobre Data Access.
+
+Responsable de:
+
+- análisis agronómico
+- motor de reglas
+- modelos predictivos
+- IA Generativa
+- alertas inteligentes
+- dashboard de monitoreo
+- soporte a la toma de decisiones
+
+Toda la inteligencia del sistema se alimenta exclusivamente desde ARGPLANT Data Access.
 
 ---
 
