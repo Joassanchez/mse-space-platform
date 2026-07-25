@@ -1,0 +1,186 @@
+# BBCH phenological growth stages for soy and corn.
+# Kc = crop coefficient. water_stress_sensitivity: low | medium | high.
+stages:
+  soy:
+    - bbch_code: "00"
+      name: Semilla seca
+      description: Dry seed — pre-sowing.
+      kc: 0.0
+      water_stress_sensitivity: low
+      temp_sensitivity: low
+
+    - bbch_code: "09"
+      name: Emergencia
+      description: Emergence — cotyledons break through soil surface.
+      kc: 0.4
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "14"
+      name: Cuarta hoja trifoliada desplegada
+      description: 4th trifoliate leaf fully unfolded.
+      kc: 0.7
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "25"
+      name: Quinto nudo del tallo principal
+      description: 5th node on main stem — lateral shoots visible.
+      kc: 0.9
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "31"
+      name: Inicio elongación del tallo
+      description: Beginning of stem elongation — 1 visibly extended internode.
+      kc: 1.0
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "51"
+      name: Botón floral visible
+      description: First flower buds visible — inflorescence emergence.
+      kc: 1.1
+      water_stress_sensitivity: high
+      temp_sensitivity: medium
+
+    - bbch_code: "60"
+      name: Inicio de floración
+      description: First flowers open — start of flowering (R1).
+      kc: 1.15
+      water_stress_sensitivity: high
+      temp_sensitivity: high
+
+    - bbch_code: "65"
+      name: Plena floración
+      description: Full flowering — >50% of flowers open (R2).
+      kc: 1.15
+      water_stress_sensitivity: high
+      temp_sensitivity: high
+
+    - bbch_code: "71"
+      name: Inicio formación de vainas
+      description: First pods visible — beginning of pod development (R3).
+      kc: 1.1
+      water_stress_sensitivity: high
+      temp_sensitivity: medium
+
+    - bbch_code: "75"
+      name: Llenado de vainas
+      description: Pod filling — seeds developing inside pods (R4-R5).
+      kc: 1.05
+      water_stress_sensitivity: high
+      temp_sensitivity: high
+
+    - bbch_code: "79"
+      name: Fin formación de vainas
+      description: End of pod formation — pods reach full size (R6).
+      kc: 0.9
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "85"
+      name: Maduración
+      description: Beginning of maturity — leaves yellowing, pods maturing (R7).
+      kc: 0.5
+      water_stress_sensitivity: low
+      temp_sensitivity: low
+
+    - bbch_code: "89"
+      name: Madurez completa
+      description: Full maturity — pods dry, ready for harvest (R8).
+      kc: 0.2
+      water_stress_sensitivity: low
+      temp_sensitivity: low
+
+  corn:
+    - bbch_code: "00"
+      name: Semilla seca
+      description: Dry seed — pre-sowing.
+      kc: 0.0
+      water_stress_sensitivity: low
+      temp_sensitivity: low
+
+    - bbch_code: "09"
+      name: Emergencia
+      description: Emergence — coleoptile breaks through soil surface.
+      kc: 0.3
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "14"
+      name: Cuarta hoja desplegada
+      description: 4th leaf fully unfolded — leaf collar visible.
+      kc: 0.5
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "19"
+      name: Nueve o más hojas desplegadas
+      description: 9 or more leaves unfolded — rapid vegetative growth.
+      kc: 0.8
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "34"
+      name: Cuatro nudos del tallo
+      description: 4 nodes detectable — stem elongation phase.
+      kc: 1.05
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "39"
+      name: Fin elongación del tallo
+      description: End of stem elongation — flag leaf fully developed.
+      kc: 1.15
+      water_stress_sensitivity: medium
+      temp_sensitivity: medium
+
+    - bbch_code: "53"
+      name: Punta de la panoja visible
+      description: Tip of tassel visible — early reproductive stage.
+      kc: 1.15
+      water_stress_sensitivity: high
+      temp_sensitivity: medium
+
+    - bbch_code: "60"
+      name: Inicio de floración masculina
+      description: First anthers visible — start of tasseling (VT).
+      kc: 1.2
+      water_stress_sensitivity: high
+      temp_sensitivity: high
+
+    - bbch_code: "65"
+      name: Floración femenina
+      description: Silks visible — start of silking (R1).
+      kc: 1.2
+      water_stress_sensitivity: high
+      temp_sensitivity: high
+
+    - bbch_code: "71"
+      name: Inicio llenado de granos
+      description: Beginning of grain filling — blister stage (R2).
+      kc: 1.1
+      water_stress_sensitivity: high
+      temp_sensitivity: medium
+
+    - bbch_code: "75"
+      name: Mitad llenado de granos
+      description: Mid grain fill — dough stage (R4).
+      kc: 1.0
+      water_stress_sensitivity: medium
+      temp_sensitivity: high
+
+    - bbch_code: "85"
+      name: Maduración
+      description: Dent stage — grains denting, moisture decreasing (R5).
+      kc: 0.6
+      water_stress_sensitivity: low
+      temp_sensitivity: low
+
+    - bbch_code: "89"
+      name: Madurez fisiológica
+      description: Physiological maturity — black layer formed (R6).
+      kc: 0.2
+      water_stress_sensitivity: low
+      temp_sensitivity: low

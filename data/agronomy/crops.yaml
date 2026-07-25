@@ -1,0 +1,21 @@
+# ARGPLANT crop catalog — loaded at startup as in-memory seed data.
+crops:
+  - id: soy
+    name: Soja
+    scientific_name: Glycine max
+    growing_season_days: 120
+    temperature:
+      optimal_min: 20
+      optimal_max: 30
+      stress_min: 35
+      stress_max: 42
+
+  - id: corn
+    name: Maíz
+    scientific_name: Zea mays
+    growing_season_days: 130
+    temperature:
+      optimal_min: 18
+      optimal_max: 28
+      stress_min: 35
+      stress_max: 44
