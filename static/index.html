@@ -525,6 +525,57 @@
     </div>
   </footer>
 
+  <!-- Ingresar Datos Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="data-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Ingresar Datos del Lote</h2>
+        <button class="modal-close" id="modal-close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form class="modal-form" id="data-form">
+        <div class="form-group">
+          <label class="form-label" for="lot-id">Identificador del Lote</label>
+          <input type="text" id="lot-id" class="form-input" value="lote-123" placeholder="Ej: lote-123" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="crop-select">Cultivo</label>
+            <select id="crop-select" class="form-input" required>
+              <option value="soy" selected>Soja</option>
+              <option value="corn">Maíz</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="analysis-date">Fecha de Análisis</label>
+            <input type="date" id="analysis-date" class="form-input" value="2026-07-21" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="lat-input">Latitud</label>
+            <input type="number" id="lat-input" class="form-input" value="-33.89" step="0.01" min="-90" max="90" placeholder="-33.89" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lon-input">Longitud</label>
+            <input type="number" id="lon-input" class="form-input" value="-60.57" step="0.01" min="-180" max="180" placeholder="-60.57" required>
+          </div>
+        </div>
+        <div class="form-presets">
+          <span class="preset-label">Cargar zona:</span>
+          <button type="button" class="preset-btn" data-lat="-33.89" data-lon="-60.57">Pergamino</button>
+          <button type="button" class="preset-btn" data-lat="-32.95" data-lon="-60.66">Rosario</button>
+          <button type="button" class="preset-btn" data-lat="-34.60" data-lon="-58.38">Buenos Aires</button>
+        </div>
+        <button type="submit" class="btn-primary btn-lg modal-submit">
+          <span class="material-symbols-outlined">analytics</span>
+          Ejecutar Análisis
+        </button>
+      </form>
+    </div>
+  </div>
+
   <script src="/static/script.js"></script>
 </body>
 </html>

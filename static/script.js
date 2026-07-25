@@ -274,21 +274,24 @@ document.getElementById('btn-notif')?.addEventListener('click', () => {
 
 const API_BASE = '/api/v1';
 
-// Default query for Pergamino demo
-const DEFAULT_QUERY = {
-  lot_id: 'lote-123',
-  crop: 'soy',
-  lat: -33.89,
-  lon: -60.57,
-  date: '2026-07-21',
-};
+/** Get current query from modal form fields. */
+function getQueryParams() {
+  return {
+    lot_id: document.getElementById('lot-id')?.value || 'lote-123',
+    crop: document.getElementById('crop-select')?.value || 'soy',
+    lat: parseFloat(document.getElementById('lat-input')?.value) || -33.89,
+    lon: parseFloat(document.getElementById('lon-input')?.value) || -60.57,
+    date: document.getElementById('analysis-date')?.value || '2026-07-21',
+  };
+}
 
 let analysisData = null;
 let predictData = null;
 
 /** Fetch unified analysis data from the orchestrator. */
 async function fetchAnalysis() {
-  const params = new URLSearchParams(DEFAULT_QUERY);
+  const q = getQueryParams();
+  const params = new URLSearchParams(q);
   try {
     const res = await fetch(`${API_BASE}/analysis?${params}`);
     if (!res.ok) throw new Error(`Analysis: ${res.status}`);
@@ -302,11 +305,12 @@ async function fetchAnalysis() {
 
 /** Fetch prediction (anomalies, risk, yield, recommendations). */
 async function fetchPrediction() {
+  const q = getQueryParams();
   try {
     const res = await fetch(`${API_BASE}/predict`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(DEFAULT_QUERY),
+      body: JSON.stringify(q),
     });
     if (!res.ok) throw new Error(`Predict: ${res.status}`);
     predictData = await res.json();
@@ -368,7 +372,8 @@ function updateSynthesis(data) {
   const banner = document.querySelector('#ai-synthesis .ai-synthesis-content p');
   if (!banner || !data) return;
 
-  const crop = DEFAULT_QUERY.crop === 'soy' ? 'Soja' : 'Maíz';
+  const q = getQueryParams();
+  const crop = q.crop === 'soy' ? 'Soja' : 'Maíz';
   const risk = data.risk_assessment?.overall || 'medio';
   const anomalies = data.anomalies?.length || 0;
   
@@ -427,7 +432,8 @@ function connectSSE() {
 
 /** Main: load data and update UI. */
 async function loadDashboard() {
-  showNotification('🔄 Cargando datos para Pergamino...', 'info');
+  const q = getQueryParams();
+  showNotification(`🔄 Analizando lote ${q.lot_id} (${q.crop})...`, 'info');
 
   const [analysis, prediction] = await Promise.all([
     fetchAnalysis(),
@@ -438,6 +444,7 @@ async function loadDashboard() {
     updateKPIs(prediction);
     updateSynthesis(prediction);
     updateAlerts(prediction);
+    updatePills(q);
   }
 
   if (analysis) {
@@ -447,8 +454,50 @@ async function loadDashboard() {
   showNotification('✅ Dashboard actualizado con datos reales', 'success');
 }
 
-/** Wire the "Ingresar Datos" button. */
-document.getElementById('btn-ingresar')?.addEventListener('click', loadDashboard);
+/** Wire the "Ingresar Datos" button — open modal. */
+document.getElementById('btn-ingresar')?.addEventListener('click', () => {
+  openModal();
+});
+
+/** Close modal on close button or overlay click. */
+document.getElementById('modal-close')?.addEventListener('click', closeModal);
+document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+/** Preset buttons — set coordinates. */
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('lat-input').value = btn.dataset.lat;
+    document.getElementById('lon-input').value = btn.dataset.lon;
+  });
+});
+
+/** Handle form submit — run analysis. */
+document.getElementById('data-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  closeModal();
+  await loadDashboard();
+});
+
+/** Update filter pills with current query data. */
+function updatePills(q) {
+  const pills = document.querySelectorAll('.filters-pills .pill');
+  if (pills.length >= 4) {
+    pills[0].innerHTML = `<span class="material-symbols-outlined pill-icon">location_on</span> Lote ${q.lot_id}`;
+    pills[1].innerHTML = `<span class="material-symbols-outlined pill-icon">landscape</span> Lat: ${q.lat} Lon: ${q.lon}`;
+    pills[2].innerHTML = `<span class="material-symbols-outlined pill-icon">eco</span> ${q.crop === 'soy' ? 'Soja' : 'Maíz'}`;
+    pills[3].innerHTML = `<span class="material-symbols-outlined pill-icon">calendar_today</span> ${q.date}`;
+  }
+}
+
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
 
 // Auto-load on page open
 document.addEventListener('DOMContentLoaded', () => {

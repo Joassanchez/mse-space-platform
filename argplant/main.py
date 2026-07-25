@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from argplant.shared.config import settings
@@ -68,6 +68,12 @@ app.add_middleware(RateLimiterMiddleware)
 async def health_check() -> JSONResponse:
     """Health check endpoint. Returns 200 when the service is running."""
     return JSONResponse(content={"status": "ok"})
+
+
+@app.get("/", tags=["system"])
+async def dashboard() -> FileResponse:
+    """Serve the ARGPLANT AI dashboard."""
+    return FileResponse("static/index.html")
 
 
 # Static frontend — served at root
