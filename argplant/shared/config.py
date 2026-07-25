@@ -66,8 +66,8 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # LLM / AI Provider
     # ------------------------------------------------------------------
-    LLM_PROVIDER: str = "gemini"  # gemini | openai | anthropic | ollama
-    LLM_MODEL: str = "gemini-2.0-flash"
+    LLM_PROVIDER: str = "openai"  # gemini | openai | anthropic | ollama
+    LLM_MODEL: str = "gpt-4o-mini"
     GEMINI_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""

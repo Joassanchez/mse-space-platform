@@ -73,6 +73,44 @@ class GeminiClient(LLMClient):
 
 
 # ---------------------------------------------------------------------------
+# OpenAI implementation
+# ---------------------------------------------------------------------------
+
+
+class OpenAIClient(LLMClient):
+    """OpenAI via the openai SDK."""
+
+    def __init__(self, model: str | None = None, api_key: str | None = None) -> None:
+        try:
+            from openai import AsyncOpenAI  # type: ignore[import-untyped]
+        except ImportError:
+            raise ImportError(
+                "openai is required for OpenAI. Install with: pip install openai"
+            ) from None
+
+        self._model = model or settings.LLM_MODEL or "gpt-4o-mini"
+        self._client = AsyncOpenAI(api_key=api_key or settings.OPENAI_API_KEY)
+
+    async def generate(self, prompt: str, system: str | None = None) -> str:
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
+        response = await self._client.chat.completions.create(
+            model=self._model,
+            messages=messages,
+        )
+        return response.choices[0].message.content or ""
+
+    async def generate_json(self, prompt: str, system: str | None = None) -> dict[str, Any]:
+        full_prompt = f"{prompt}\n\nRespond ONLY with valid JSON. No markdown, no explanation."
+        text = await self.generate(full_prompt, system)
+        text = text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        return json.loads(text)
+
+
+# ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
 
@@ -83,6 +121,7 @@ def get_llm_client() -> LLMClient:
 
     if provider == "gemini":
         return GeminiClient()
+    if provider == "openai":
+        return OpenAIClient()
 
-    # TODO: Add OpenAI, Anthropic, Ollama providers
-    raise ValueError(f"Unsupported LLM_PROVIDER: {provider}. Supported: gemini")
+    raise ValueError(f"Unsupported LLM_PROVIDER: {provider}. Supported: gemini, openai")
