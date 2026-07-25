@@ -1105,62 +1105,84 @@ function updateMap(lat, lon) {
   const mapContainer = document.getElementById('map-container');
   const mapImage = document.getElementById('map-image');
   const legendTitle = document.querySelector('.legend-title');
-  const markers = document.querySelectorAll('.map-marker');
 
   if (!mapContainer) return;
 
-  // Build a tile-based OpenStreetMap view using CSS background
-  // OSM tile: https://tile.openstreetmap.org/{z}/{x}/{y}.png
-  const zoom = 13;
+  // Zoom 15 = detailed neighborhood view
+  const zoom = 15;
   const x = lon2tile(lon, zoom);
   const y = lat2tile(lat, zoom);
   const tileUrl = `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
 
+  // Update tile background
   if (mapImage) {
-    // Try OSM tile first — with fallback on error
     const img = new Image();
     img.onload = () => {
       mapImage.style.backgroundImage = `url('${tileUrl}')`;
     };
     img.onerror = () => {
-      // Fallback: dark background with grid pattern
       mapImage.style.backgroundImage = `
-        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
         radial-gradient(ellipse at center, #1a3a1a 0%, #0d1f0d 100%)
       `;
-      mapImage.style.backgroundSize = '40px 40px, 40px 40px, cover';
+      mapImage.style.backgroundSize = '30px 30px, 30px 30px, cover';
     };
     img.src = tileUrl;
     mapImage.style.backgroundSize = 'cover';
     mapImage.style.backgroundPosition = 'center';
   }
 
-  // Update map container overlay with coordinate info
+  // Remove old custom pin
+  const oldPin = document.getElementById('map-lot-pin');
+  if (oldPin) oldPin.remove();
+
+  // Create prominent pin with pulsing dot + label
+  const pin = document.createElement('div');
+  pin.id = 'map-lot-pin';
+  pin.innerHTML = `
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);">
+      <div style="width:14px;height:14px;background:#e53935;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4);position:relative;z-index:2;"></div>
+      <div style="position:absolute;top:7px;left:7px;width:30px;height:30px;background:rgba(229,57,53,0.3);border-radius:50%;transform:translate(-50%,-50%);animation:pin-pulse 2s ease-out infinite;z-index:1;"></div>
+      <div style="margin-top:4px;background:rgba(0,0,0,0.8);color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;font-family:'JetBrains Mono',monospace;white-space:nowrap;">📍 ${getPredictParams().lot_id}</div>
+    </div>
+  `;
+  Object.assign(pin.style, {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    zIndex: '15',
+  });
+  mapContainer.appendChild(pin);
+
+  // Add pulse animation if not already in stylesheet
+  if (!document.getElementById('pin-pulse-keyframes')) {
+    const style = document.createElement('style');
+    style.id = 'pin-pulse-keyframes';
+    style.textContent = '@keyframes pin-pulse{0%{transform:translate(-50%,-50%) scale(0.5);opacity:1}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}';
+    document.head.appendChild(style);
+  }
+
+  // Coord info overlay
   let infoOverlay = document.getElementById('map-coord-info');
   if (!infoOverlay) {
     infoOverlay = document.createElement('div');
     infoOverlay.id = 'map-coord-info';
     Object.assign(infoOverlay.style, {
-      position: 'absolute', bottom: '50px', left: '16px',
-      background: 'rgba(0,0,0,0.7)', color: '#fff',
-      padding: '6px 12px', borderRadius: '8px',
-      fontSize: '11px', fontFamily: 'JetBrains Mono, monospace',
-      zIndex: '10',
+      position: 'absolute', bottom: '52px', left: '16px',
+      background: 'rgba(0,0,0,0.75)', color: '#a5d6a7',
+      padding: '8px 14px', borderRadius: '10px',
+      fontSize: '12px', fontFamily: 'JetBrains Mono, monospace',
+      zIndex: '10', letterSpacing: '0.02em',
     });
     mapContainer.appendChild(infoOverlay);
   }
-  infoOverlay.textContent = `📍 ${lat.toFixed(4)}°, ${lon.toFixed(4)}° · Zoom ${zoom}`;
+  infoOverlay.textContent = `📍 ${lat.toFixed(6)}°, ${lon.toFixed(6)}°  ·  Zoom ${zoom}`;
 
-  // Position marker at center of map
-  if (markers.length >= 1) {
-    markers[0].style.top = '42%';
-    markers[0].style.left = '46%';
-    markers[0].title = `Lote (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
-    markers[0].style.display = 'flex';
-  }
+  // Hide old static markers
+  document.querySelectorAll('.map-marker').forEach(m => { m.style.display = 'none'; });
 
-  if (legendTitle) legendTitle.textContent = `NDVI — ${lat.toFixed(4)}°, ${lon.toFixed(4)}°`;
+  if (legendTitle) legendTitle.textContent = `NDVI — ${getPredictParams().lot_id}`;
 }
 
 function lon2tile(lon, zoom) {
