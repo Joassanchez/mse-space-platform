@@ -1,1 +1,0 @@
-"""Geospatial integration tests."""
