@@ -1,0 +1,18 @@
+# ARGPLANT economy — product ID to name mappings loaded at startup.
+# IDs match MAGyP Monitor de Granos numeric product codes.
+products:
+  - product_id: 18
+    name: Soja
+    unit: ARS/ton
+
+  - product_id: 1
+    name: Maíz
+    unit: ARS/ton
+
+  - product_id: 2
+    name: Trigo
+    unit: ARS/ton
+
+  - product_id: 6
+    name: Girasol
+    unit: ARS/ton
