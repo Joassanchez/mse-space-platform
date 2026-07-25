@@ -328,6 +328,7 @@ class RuleEngine:
 
         critical_water = any(a.severity == "critical" for a in water_anomalies)
         high_water = any(a.severity in ("critical", "high") for a in water_anomalies)
+        medium_water = any(a.severity in ("critical", "high", "medium") for a in water_anomalies)
         high_heat = any(a.severity in ("critical", "high") for a in heat_anomalies)
 
         if critical_water:
@@ -356,6 +357,16 @@ class RuleEngine:
                 action="Aplicar bioestimulante anti-estrés térmico. Monitorear evapotranspiración sector este",
                 urgency="short_term",
                 audience=["ingeniero", "contratista"],
+            ))
+
+        if medium_water and not high_water:
+            priority += 1
+            recs.append(Recommendation(
+                priority=priority,
+                action="Monitorear humedad del suelo. Programar riego si la tendencia continúa en los próximos 7 días",
+                urgency="short_term",
+                expected_benefit_pct=4.0,
+                audience=["productor"],
             ))
 
         if not recs:
