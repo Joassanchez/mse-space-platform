@@ -9,6 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
@@ -143,10 +147,8 @@
           <span class="material-symbols-outlined">smart_toy</span>
         </div>
         <div class="ai-synthesis-content">
-          <p>
-            <strong>Síntesis IA:</strong> El lote
-            <span class="inline-badge">Lote 123 (Soja)</span>
-            atraviesa una fase crítica (BBCH 65-75). El déficit hídrico sostenido durante las últimas 72hs, combinado con estrés térmico (&gt;32°C), proyecta una caída abrupta en la tasa de cuajado. Se requiere intervención urgente para mitigar aborto floral.
+          <p id="ia-synthesis-text">
+            <strong>Síntesis IA:</strong> Cargando análisis más reciente...
           </p>
         </div>
       </section>
@@ -169,39 +171,8 @@
               </button>
             </div>
           </div>
-          <div class="map-container" id="map-container">
-            <div class="map-image" id="map-image"></div>
-            <!-- Map Controls -->
-            <div class="map-controls">
-              <button class="map-ctrl-btn" id="map-zoom-in" title="Zoom In">
-                <span class="material-symbols-outlined">add</span>
-              </button>
-              <div class="map-ctrl-divider"></div>
-              <button class="map-ctrl-btn" id="map-zoom-out" title="Zoom Out">
-                <span class="material-symbols-outlined">remove</span>
-              </button>
-            </div>
-            <!-- Map Legend -->
-            <div class="map-legend">
-              <p class="legend-title">Índice NDVI</p>
-              <div class="legend-bar">
-                <div class="legend-seg" style="background: #ba1a1a"></div>
-                <div class="legend-seg" style="background: #fed3c7"></div>
-                <div class="legend-seg" style="background: #88d982"></div>
-                <div class="legend-seg" style="background: #0d631b"></div>
-              </div>
-              <div class="legend-labels">
-                <span>Bajo</span>
-                <span>Alto</span>
-              </div>
-            </div>
-            <!-- Location Markers -->
-            <div class="map-marker marker-critical" style="top: 35%; left: 45%" title="Zona crítica">
-              <span class="material-symbols-outlined">warning</span>
-            </div>
-            <div class="map-marker marker-info" style="top: 55%; left: 30%" title="Sensor activo">
-              <span class="material-symbols-outlined">sensors</span>
-            </div>
+          <div class="map-container" id="map-container" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+            <div id="map" style="flex: 1; width: 100%; min-height: 400px;"></div>
           </div>
         </div>
 
@@ -212,180 +183,40 @@
             <span class="alert-badge-count">4 Nuevas</span>
           </div>
           <div class="alerts-list" id="alerts-list">
-            <!-- Alert 1: Critical -->
-            <div class="alert-card critical">
-              <div class="alert-stripe critical"></div>
-              <div class="alert-top">
-                <h3 class="alert-title">Estrés hídrico severo — Lote 123</h3>
-                <span class="severity-badge critical">CRÍTICO</span>
-              </div>
-              <div class="alert-audience">
-                <span class="audience-tag">PRODUCTOR</span>
-                <span class="audience-tag">INGENIERO</span>
-              </div>
-              <p class="alert-description">R4 crítico. Requiere acción inmediata. NDVI 15% debajo del umbral.</p>
-              <!-- Expandable Technical Detail -->
-              <div class="expandable-section" id="alert-detail-1">
-                <button class="expand-btn" onclick="toggleExpand('alert-detail-1')">
-                  <span class="material-symbols-outlined">expand_more</span>
-                  Detalle técnico avanzado
-                </button>
-                <div class="expand-content">
-                  <div class="tech-grid">
-                    <div class="tech-item">
-                      <span class="tech-label">NDVI Actual</span>
-                      <span class="tech-value error">0.38</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">NDVI Esperado</span>
-                      <span class="tech-value">0.53</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Humedad 0-20cm</span>
-                      <span class="tech-value error">18.2%</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Fuente SAR</span>
-                      <span class="tech-value">SAOCOM 1A</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Fecha Captura</span>
-                      <span class="tech-value">2026-07-20</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Confianza IA</span>
-                      <span class="tech-value">94%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <button class="alert-action-btn">
-                Analizar Mitigación
-                <span class="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </div>
-
-            <!-- Alert 2: Warning -->
-            <div class="alert-card warning">
-              <div class="alert-stripe warning"></div>
-              <div class="alert-top">
-                <h3 class="alert-title">Alerta de Estrés Térmico</h3>
-                <span class="severity-badge warning">PRECAUCIÓN</span>
-              </div>
-              <div class="alert-audience">
-                <span class="audience-tag">INGENIERO</span>
-              </div>
-              <p class="alert-description">Temperaturas &gt;32°C proyectadas para los próximos 3 días. Monitorear evapotranspiración en sector este.</p>
-              <div class="expandable-section" id="alert-detail-2">
-                <button class="expand-btn" onclick="toggleExpand('alert-detail-2')">
-                  <span class="material-symbols-outlined">expand_more</span>
-                  Detalle técnico avanzado
-                </button>
-                <div class="expand-content">
-                  <div class="tech-grid">
-                    <div class="tech-item">
-                      <span class="tech-label">Temp. Máx. Proy.</span>
-                      <span class="tech-value warning-val">34.2°C</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">ETP Estimada</span>
-                      <span class="tech-value">6.8 mm/día</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Duración Estimada</span>
-                      <span class="tech-value">72hs</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Fuente Meteo</span>
-                      <span class="tech-value">SMN + ERA5</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <button class="alert-link-btn">
-                Ver pronóstico detallado
-              </button>
-            </div>
-
-            <!-- Alert 3: Info -->
-            <div class="alert-card info">
-              <div class="alert-stripe info"></div>
-              <div class="alert-top">
-                <h3 class="alert-title">Ventana de Aplicación</h3>
-                <span class="severity-badge info">INFO</span>
-              </div>
-              <div class="alert-audience">
-                <span class="audience-tag">CONTRATISTA</span>
-              </div>
-              <p class="alert-description">Condiciones óptimas de viento (12km/h) detectadas para mañana 06:00 AM - 10:00 AM.</p>
-              <div class="expandable-section" id="alert-detail-3">
-                <button class="expand-btn" onclick="toggleExpand('alert-detail-3')">
-                  <span class="material-symbols-outlined">expand_more</span>
-                  Detalle técnico avanzado
-                </button>
-                <div class="expand-content">
-                  <div class="tech-grid">
-                    <div class="tech-item">
-                      <span class="tech-label">Viento (km/h)</span>
-                      <span class="tech-value">12</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Dirección</span>
-                      <span class="tech-value">SSE</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Prob. Lluvia</span>
-                      <span class="tech-value">5%</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Humedad Rel.</span>
-                      <span class="tech-value">62%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Alert 4: Risk Trend -->
-            <div class="alert-card warning">
-              <div class="alert-stripe warning"></div>
-              <div class="alert-top">
-                <h3 class="alert-title">Tendencia de Sequía Regional</h3>
-                <span class="severity-badge warning">PRECAUCIÓN</span>
-              </div>
-              <div class="alert-audience">
-                <span class="audience-tag">PRODUCTOR</span>
-                <span class="audience-tag">INGENIERO</span>
-              </div>
-              <p class="alert-description">Índice SPI negativo sostenido durante 21 días. Probabilidad de sequía agrícola moderada en próximas 2 semanas.</p>
-              <div class="expandable-section" id="alert-detail-4">
-                <button class="expand-btn" onclick="toggleExpand('alert-detail-4')">
-                  <span class="material-symbols-outlined">expand_more</span>
-                  Detalle técnico avanzado
-                </button>
-                <div class="expand-content">
-                  <div class="tech-grid">
-                    <div class="tech-item">
-                      <span class="tech-label">SPI-30</span>
-                      <span class="tech-value error">-1.42</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Precip. Acum. 30d</span>
-                      <span class="tech-value">12mm</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Normal Histórico</span>
-                      <span class="tech-value">48mm</span>
-                    </div>
-                    <div class="tech-item">
-                      <span class="tech-label">Fuente</span>
-                      <span class="tech-value">SMAP L4</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- Dynamic alerts will be loaded here -->
           </div>
+        </div>
+      </section>
+
+      <!-- Ingestion History Section -->
+      <section class="system-log" id="ingestion-history-section" data-animate="fade-up" style="--delay: 0.45s; margin-bottom: 2rem;">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="material-symbols-outlined panel-icon">cloud_download</span>
+            <h2 class="panel-title">Historial de Ingesta de Datos</h2>
+          </div>
+          <button class="icon-btn" title="Actualizar" onclick="fetchJobs()">
+            <span class="material-symbols-outlined">refresh</span>
+          </button>
+        </div>
+        <div class="jobs-list" id="jobs-list">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- AI Agent Executions Section -->
+      <section class="system-log" id="analysis-section" data-animate="fade-up" style="--delay: 0.48s; margin-bottom: 2rem;">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="material-symbols-outlined panel-icon">psychology</span>
+            <h2 class="panel-title">Ejecuciones de Agentes IA</h2>
+          </div>
+          <button class="icon-btn" title="Actualizar" onclick="fetchAnalysis()">
+            <span class="material-symbols-outlined">refresh</span>
+          </button>
+        </div>
+        <div class="analysis-list" id="analysis-list">
+          <!-- Dynamically populated -->
         </div>
       </section>
 
@@ -507,6 +338,90 @@
         </div>
       </section>
     </div>
+
+    <!-- Modal Ingresar Datos -->
+    <div id="ingreso-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Ingresar Datos (Nueva Ingesta)</h2>
+          <button class="icon-btn modal-close" id="btn-close-modal"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <form id="ingreso-form" class="modal-body">
+          <div class="form-group">
+            <label for="region_id" class="form-label">Región</label>
+            <select id="region_id" name="region_id" class="form-input" required>
+              <option value="">Cargando regiones...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="date_from" class="form-label">Fecha de Inicio</label>
+            <input type="date" id="date_from" name="date_from" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label for="date_to" class="form-label">Fecha de Fin</label>
+            <input type="date" id="date_to" name="date_to" class="form-input" required>
+          </div>
+          <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:1rem; margin-top:2rem;">
+            <button type="button" class="btn-secondary" id="btn-cancel-modal">Cancelar</button>
+            <button type="submit" class="btn-primary">
+              <span class="material-symbols-outlined">cloud_upload</span>
+              Iniciar Ingesta
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal Análisis Predictivo -->
+    <div id="predict-modal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Análisis Predictivo</h2>
+          <button class="icon-btn modal-close" id="btn-close-predict-modal"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <form id="predict-form" class="modal-body">
+          <div class="form-group">
+            <label for="predict-lot-id" class="form-label">Identificador del Lote</label>
+            <input type="text" id="predict-lot-id" class="form-input" value="lote-123" placeholder="Ej: lote-123" required>
+          </div>
+          <div style="display:flex;gap:1rem;">
+            <div class="form-group" style="flex:1;">
+              <label for="predict-crop" class="form-label">Cultivo</label>
+              <select id="predict-crop" class="form-input" required>
+                <option value="soy" selected>Soja</option>
+                <option value="corn">Maíz</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label for="predict-date" class="form-label">Fecha de Análisis</label>
+              <input type="date" id="predict-date" class="form-input" value="2026-07-21" required>
+            </div>
+          </div>
+          <div style="display:flex;gap:1rem;">
+            <div class="form-group" style="flex:1;">
+              <label for="predict-lat" class="form-label">Latitud</label>
+              <input type="number" id="predict-lat" class="form-input" value="-33.89" step="0.01" min="-90" max="90" required>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label for="predict-lon" class="form-label">Longitud</label>
+              <input type="number" id="predict-lon" class="form-input" value="-60.57" step="0.01" min="-180" max="180" required>
+            </div>
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:11px;color:var(--outline);">Zonas:</span>
+            <button type="button" class="preset-btn" onclick="document.getElementById('predict-lat').value='-33.89';document.getElementById('predict-lon').value='-60.57'">Pergamino</button>
+            <button type="button" class="preset-btn" onclick="document.getElementById('predict-lat').value='-32.95';document.getElementById('predict-lon').value='-60.66'">Rosario</button>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:1rem;margin-top:2rem;">
+            <button type="button" class="btn-secondary" id="btn-cancel-predict-modal">Cancelar</button>
+            <button type="submit" class="btn-primary">
+              <span class="material-symbols-outlined">analytics</span>
+              Ejecutar Análisis
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 
   <!-- Footer -->
@@ -524,57 +439,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- Ingresar Datos Modal -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal" id="data-modal">
-      <div class="modal-header">
-        <h2 class="modal-title">Ingresar Datos del Lote</h2>
-        <button class="modal-close" id="modal-close">
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-      <form class="modal-form" id="data-form">
-        <div class="form-group">
-          <label class="form-label" for="lot-id">Identificador del Lote</label>
-          <input type="text" id="lot-id" class="form-input" value="lote-123" placeholder="Ej: lote-123" required>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="crop-select">Cultivo</label>
-            <select id="crop-select" class="form-input" required>
-              <option value="soy" selected>Soja</option>
-              <option value="corn">Maíz</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="analysis-date">Fecha de Análisis</label>
-            <input type="date" id="analysis-date" class="form-input" value="2026-07-21" required>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="lat-input">Latitud</label>
-            <input type="number" id="lat-input" class="form-input" value="-33.89" step="0.01" min="-90" max="90" placeholder="-33.89" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="lon-input">Longitud</label>
-            <input type="number" id="lon-input" class="form-input" value="-60.57" step="0.01" min="-180" max="180" placeholder="-60.57" required>
-          </div>
-        </div>
-        <div class="form-presets">
-          <span class="preset-label">Cargar zona:</span>
-          <button type="button" class="preset-btn" data-lat="-33.89" data-lon="-60.57">Pergamino</button>
-          <button type="button" class="preset-btn" data-lat="-32.95" data-lon="-60.66">Rosario</button>
-          <button type="button" class="preset-btn" data-lat="-34.60" data-lon="-58.38">Buenos Aires</button>
-        </div>
-        <button type="submit" class="btn-primary btn-lg modal-submit">
-          <span class="material-symbols-outlined">analytics</span>
-          Ejecutar Análisis
-        </button>
-      </form>
-    </div>
-  </div>
 
   <script src="/static/script.js"></script>
 </body>

@@ -1,176 +1,641 @@
 /**
  * ARGPLANT AI — Interactive Platform Logic
- * Handles animations, expandable sections, map controls,
- * and user interactions for the decision-support dashboard.
+ * Full-stack dashboard connecting to all backend API endpoints.
+ * Handles: Regions, Alerts, Jobs, Analysis, Geo layers, UI interactions.
  */
 
+const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_KEY = 'dev-secret-key';
+const HEADERS = {
+  'X-API-Key': API_KEY,
+  'Content-Type': 'application/json'
+};
+
+/* ============================================
+   App Initialization
+   ============================================ */
 document.addEventListener('DOMContentLoaded', () => {
   initScrollAnimations();
   initKPICounters();
   initMapControls();
   initApprovalFlow();
+  initModalHandlers();
+
+  // Backend data loading
+  fetchRegions();
+  fetchAlerts();
+  fetchAlertCount();
+  fetchJobs();
+  fetchAnalysis();
+  fetchLatestAnalysis();
+  fetchAnalysisSummary();
+  initSSE();
+
+  // Geo layers loaded after map init
+  setTimeout(() => {
+    loadGeoRegions();
+    loadGeoAlerts();
+    loadRiskZones();
+  }, 500);
 });
 
 /* ============================================
-   Scroll-triggered Animations (Intersection Observer)
+   API Helper
    ============================================ */
-function initScrollAnimations() {
-  const elements = document.querySelectorAll('[data-animate]');
-  
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate-in');
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    {
-      threshold: 0.1,
-      rootMargin: '0px 0px -40px 0px',
-    }
-  );
-
-  elements.forEach((el) => observer.observe(el));
+async function apiFetch(path, options = {}) {
+  const url = `${API_BASE_URL}${path}`;
+  const config = {
+    headers: HEADERS,
+    ...options,
+  };
+  const response = await fetch(url, config);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`API ${response.status}: ${text}`);
+  }
+  return response.json();
 }
 
 /* ============================================
-   KPI Counter Animation (Count-up on load)
+   Regions Module
    ============================================ */
-function initKPICounters() {
-  const kpiValues = document.querySelectorAll('.kpi-value');
-  
-  kpiValues.forEach((el) => {
-    const text = el.textContent.trim();
-    
-    // Extract numeric value if it's a plain number
-    const match = text.match(/^(-?\$?)([\d.]+)(.*)/);
-    if (!match) return;
+async function fetchRegions() {
+  try {
+    const data = await apiFetch('/regions/');
+    const items = data.items || [];
+    populateRegionSelector(items);
+    populateFilterPills(items);
+  } catch (err) {
+    console.error('Error fetching regions:', err);
+  }
+}
 
-    const prefix = match[1];
-    const targetNum = parseFloat(match[2]);
-    const suffix = match[3];
-    
-    if (isNaN(targetNum)) return;
-
-    // Animate from 0 to target
-    const duration = 1200;
-    const startTime = performance.now();
-    const isDecimal = match[2].includes('.');
-    
-    // Store original innerHTML for elements with inner spans
-    const innerSpans = el.querySelectorAll('span');
-    if (innerSpans.length > 0) return; // skip complex HTML content
-
-    function updateCounter(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-      const current = targetNum * eased;
-
-      if (isDecimal) {
-        el.textContent = prefix + current.toFixed(1) + suffix;
-      } else {
-        el.textContent = prefix + Math.round(current) + suffix;
-      }
-
-      if (progress < 1) {
-        requestAnimationFrame(updateCounter);
-      } else {
-        el.textContent = prefix + match[2] + suffix;
-      }
-    }
-
-    // Delay start by the animation delay
-    const delayStr = getComputedStyle(el.closest('[data-animate]') || el).getPropertyValue('--delay');
-    const delay = parseFloat(delayStr) * 1000 || 0;
-    
-    setTimeout(() => {
-      requestAnimationFrame(updateCounter);
-    }, delay + 300);
+function populateRegionSelector(regions) {
+  const select = document.getElementById('region_id');
+  if (!select) return;
+  select.innerHTML = '';
+  if (regions.length === 0) {
+    select.innerHTML = '<option value="">No hay regiones disponibles</option>';
+    return;
+  }
+  regions.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    opt.textContent = `${r.name} (${r.region_type || 'región'})`;
+    select.appendChild(opt);
   });
 }
 
-/* ============================================
-   Expandable Section Toggle
-   ============================================ */
-function toggleExpand(sectionId) {
-  const section = document.getElementById(sectionId);
-  if (!section) return;
-  
-  section.classList.toggle('open');
-  
-  // Animate icon rotation
-  const btn = section.querySelector('.expand-btn');
-  if (btn) {
-    const icon = btn.querySelector('.material-symbols-outlined');
-    if (icon) {
-      // Icon rotation handled by CSS
-    }
+function populateFilterPills(regions) {
+  if (regions.length === 0) return;
+  const firstRegion = regions[0];
+  const pillsContainer = document.querySelector('.filters-pills');
+  if (!pillsContainer) return;
+  // Update first pill with actual region name
+  const pills = pillsContainer.querySelectorAll('.pill');
+  if (pills[0]) {
+    pills[0].innerHTML = `<span class="material-symbols-outlined pill-icon">location_on</span> Región: ${firstRegion.name}`;
   }
 }
 
 /* ============================================
-   Technical Details Panel Toggle
+   Alerts Module
    ============================================ */
-function toggleTechDetails() {
-  const panel = document.getElementById('tech-evidence');
-  const btn = document.getElementById('btn-tech-details');
-  
-  if (!panel || !btn) return;
-  
-  panel.classList.toggle('open');
-  btn.classList.toggle('open');
+async function fetchAlerts() {
+  const container = document.getElementById('alerts-list');
+  if (!container) return;
+  try {
+    const data = await apiFetch('/alerts/?status=active&limit=10');
+    renderAlerts(data.items || [], container);
+    // Update badge count
+    const badge = document.querySelector('.alert-badge-count');
+    if (badge) badge.textContent = `${data.total} Activas`;
+  } catch (err) {
+    console.error('Error fetching alerts:', err);
+    container.innerHTML = '<p style="padding:1rem; color:var(--on-surface-variant);">No se pudieron cargar las alertas.</p>';
+  }
+}
+
+function renderAlerts(alerts, container) {
+  if (alerts.length === 0) {
+    container.innerHTML = '<p style="padding:1rem; color:var(--on-surface-variant);">No hay alertas activas.</p>';
+    return;
+  }
+  container.innerHTML = alerts.map(alert => {
+    const severityMap = { critical: '🔴', severe: '🟠', warning: '🟡', info: '🔵' };
+    const icon = severityMap[alert.severity] || '⚪';
+    const date = alert.created_at ? new Date(alert.created_at).toLocaleString() : '';
+    return `
+      <div class="alert-card ${alert.severity}" data-alert-id="${alert.id}">
+        <div class="alert-header">
+          <span class="alert-severity-icon">${icon}</span>
+          <div class="alert-info">
+            <span class="alert-title">${alert.title}</span>
+            <span class="alert-meta">${alert.severity.toUpperCase()} · ${alert.alert_type} · ${date}</span>
+          </div>
+        </div>
+        <p class="alert-message">${alert.message || ''}</p>
+        <div class="alert-actions">
+          <button class="btn-sm btn-acknowledge" onclick="acknowledgeAlert(${alert.id}, this)">
+            <span class="material-symbols-outlined">check_circle</span> Aprobar
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function fetchAlertCount() {
+  try {
+    const data = await apiFetch('/alerts/active/count/');
+    const badge = document.querySelector('.notif-badge');
+    if (badge) badge.textContent = data.total || 0;
+  } catch (err) {
+    console.error('Error fetching alert count:', err);
+  }
+}
+
+async function acknowledgeAlert(alertId, btn) {
+  try {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Procesando...';
+    await apiFetch(`/alerts/${alertId}/acknowledge/`, { method: 'PATCH' });
+    btn.innerHTML = '<span class="material-symbols-outlined">check</span> Aprobada';
+    btn.style.background = '#2e7d32';
+    btn.style.color = '#fff';
+    showNotification('Alerta aprobada exitosamente.', 'success');
+    // Refresh alerts after a short delay
+    setTimeout(() => { fetchAlerts(); fetchAlertCount(); }, 1500);
+  } catch (err) {
+    console.error('Error acknowledging alert:', err);
+    btn.disabled = false;
+    btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Aprobar';
+    showNotification('Error al aprobar la alerta.', 'error');
+  }
+}
+
+function initSSE() {
+  try {
+    const evtSource = new EventSource(`${API_BASE_URL}/alerts/stream/?X-API-Key=${API_KEY}`);
+    evtSource.addEventListener('new_alert', (event) => {
+      try {
+        const alertData = JSON.parse(event.data);
+        showNotification(`Nueva alerta: ${alertData.title || 'Alerta detectada'}`, 'info');
+        fetchAlerts();
+        fetchAlertCount();
+      } catch (e) {
+        console.warn('SSE parse error:', e);
+      }
+    });
+    evtSource.addEventListener('heartbeat', () => { /* keep alive */ });
+    evtSource.onerror = () => {
+      console.warn('SSE connection lost, will retry automatically');
+    };
+  } catch (err) {
+    console.warn('SSE not available:', err);
+  }
 }
 
 /* ============================================
-   Map Controls (Zoom simulation)
+   Jobs / Ingestion Module
    ============================================ */
+async function fetchJobs() {
+  const container = document.getElementById('jobs-list');
+  if (!container) return;
+  try {
+    const data = await apiFetch('/jobs/?limit=20');
+    renderJobs(data.items || [], container);
+  } catch (err) {
+    console.error('Error fetching jobs:', err);
+    container.innerHTML = '<p style="padding:1rem; color:var(--on-surface-variant);">No se pudieron cargar los trabajos.</p>';
+  }
+}
+
+function renderJobs(jobs, container) {
+  if (jobs.length === 0) {
+    container.innerHTML = '<p style="padding:1rem; color:var(--on-surface-variant);">No hay trabajos de ingesta registrados.</p>';
+    return;
+  }
+  container.innerHTML = jobs.map(job => {
+    const statusClass = job.status.toLowerCase().replace(/_/g, '-');
+    const date = job.created_at ? new Date(job.created_at).toLocaleString() : 'N/A';
+    const dateRange = (job.date_from && job.date_to) ? `${job.date_from} → ${job.date_to}` : '';
+    return `
+      <div class="job-item" data-job-id="${job.id}">
+        <div class="job-info">
+          <span class="job-id">ID: ${job.id}</span>
+          <span class="job-date">Creado: ${date} | Región: ${job.region_id || 'N/A'} ${dateRange ? '| Rango: ' + dateRange : ''}</span>
+        </div>
+        <div class="job-right">
+          <span class="job-status ${statusClass}">${job.status}</span>
+          <button class="icon-btn job-detail-btn" onclick="toggleJobDetail('${job.id}', this)" title="Ver detalle">
+            <span class="material-symbols-outlined">expand_more</span>
+          </button>
+        </div>
+      </div>
+      <div class="job-detail-panel" id="job-detail-${job.id}" style="display:none;"></div>
+    `;
+  }).join('');
+}
+
+async function toggleJobDetail(jobId, btn) {
+  const panel = document.getElementById(`job-detail-${jobId}`);
+  if (!panel) return;
+  if (panel.style.display === 'block') {
+    panel.style.display = 'none';
+    btn.querySelector('.material-symbols-outlined').textContent = 'expand_more';
+    return;
+  }
+  panel.style.display = 'block';
+  btn.querySelector('.material-symbols-outlined').textContent = 'expand_less';
+  panel.innerHTML = '<p style="padding:1rem;">Cargando detalle...</p>';
+
+  try {
+    const [detail, logs] = await Promise.all([
+      apiFetch(`/jobs/${jobId}`),
+      apiFetch(`/jobs/${jobId}/logs/`).catch(() => [])
+    ]);
+    let html = `<div class="job-detail-content">`;
+    html += `<div class="job-detail-grid">`;
+    html += `<div><strong>Estado:</strong> ${detail.status}</div>`;
+    html += `<div><strong>Región:</strong> ${detail.region_id || 'N/A'}</div>`;
+    html += `<div><strong>Fecha:</strong> ${detail.date_from || ''} → ${detail.date_to || ''}</div>`;
+    html += `<div><strong>Ready for ETL:</strong> ${detail.ready_for_etl ? 'Sí' : 'No'}</div>`;
+    html += `<div><strong>Search Only:</strong> ${detail.search_only ? 'Sí' : 'No'}</div>`;
+    if (detail.error_message) {
+      html += `<div class="job-error"><strong>Error:</strong> ${detail.error_message}</div>`;
+    }
+    html += `</div>`;
+
+    if (Array.isArray(logs) && logs.length > 0) {
+      html += `<h4 style="margin-top:1rem; font-size:0.85rem; color:var(--on-surface-variant);">LOGS</h4>`;
+      html += `<div class="job-logs">`;
+      logs.forEach(log => {
+        const ts = log.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+        html += `<div class="job-log-entry"><span class="log-time">${ts}</span> <span class="log-action">[${log.action}]</span> ${log.message || ''}</div>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<p style="font-size:0.85rem; color:var(--on-surface-variant); margin-top:0.5rem;">Sin logs disponibles.</p>`;
+    }
+    html += `</div>`;
+    panel.innerHTML = html;
+  } catch (err) {
+    panel.innerHTML = `<p style="padding:1rem; color:#b71c1c;">Error cargando detalle: ${err.message}</p>`;
+  }
+}
+
+async function triggerJob(formData) {
+  const body = {
+    region_id: formData.get('region_id'),
+    date_from: formData.get('date_from'),
+    date_to: formData.get('date_to')
+  };
+  const data = await apiFetch('/jobs/trigger/', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  // Try connecting WebSocket for real-time progress
+  if (data.id) {
+    connectJobWS(data.id);
+  }
+  return data;
+}
+
+function connectJobWS(jobId) {
+  try {
+    const wsUrl = `ws://localhost:8000/ws/jobs/${jobId}`;
+    const ws = new WebSocket(wsUrl);
+    ws.onopen = () => {
+      console.log(`WebSocket connected for job ${jobId}`);
+    };
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.event === 'progress') {
+          showNotification(`Job ${jobId}: ${msg.progress || ''}%`, 'info');
+        } else if (msg.event === 'completed') {
+          showNotification(`Job ${jobId} completado.`, 'success');
+          fetchJobs();
+          ws.close();
+        } else if (msg.event === 'failed') {
+          showNotification(`Job ${jobId} falló.`, 'error');
+          fetchJobs();
+          ws.close();
+        }
+      } catch (e) { /* ignore parse errors */ }
+    };
+    ws.onerror = () => console.warn('WebSocket error for job', jobId);
+    ws.onclose = () => console.log('WebSocket closed for job', jobId);
+  } catch (err) {
+    console.warn('WebSocket not available:', err);
+  }
+}
+
+/* ============================================
+   Analysis / Agent Executions Module
+   ============================================ */
+async function fetchAnalysis() {
+  const container = document.getElementById('analysis-list');
+  if (!container) return;
+  try {
+    const data = await apiFetch('/analysis/?limit=10');
+    renderAnalysis(data.items || [], container);
+  } catch (err) {
+    console.error('Error fetching analysis:', err);
+    container.innerHTML = '<p style="padding:1rem; color:var(--on-surface-variant);">No se pudieron cargar las ejecuciones IA.</p>';
+  }
+}
+
+function renderAnalysis(items, container) {
+  if (items.length === 0) {
+    container.innerHTML = '<p style="padding:1rem; color:var(--on-surface-variant);">No hay ejecuciones de agentes IA registradas.</p>';
+    return;
+  }
+  let html = `<table class="analysis-table">
+    <thead>
+      <tr>
+        <th>Agente</th>
+        <th>Área</th>
+        <th>Estado</th>
+        <th>Confianza</th>
+        <th>Fecha</th>
+        <th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  items.forEach(item => {
+    const confidence = item.confidence_score != null ? `${(item.confidence_score * 100).toFixed(0)}%` : 'N/A';
+    const date = item.finished_at ? new Date(item.finished_at).toLocaleString() : (item.created_at ? new Date(item.created_at).toLocaleString() : 'N/A');
+    const statusClass = (item.status || 'pending').toLowerCase();
+    html += `
+      <tr>
+        <td><code>${item.agent_code || 'N/A'}</code></td>
+        <td>${item.orchestrator_area || 'N/A'}</td>
+        <td><span class="analysis-status ${statusClass}">${item.status || 'N/A'}</span></td>
+        <td>${confidence}</td>
+        <td>${date}</td>
+        <td>
+          <button class="icon-btn" onclick="showAnalysisDetail('${item.execution_id}')" title="Ver detalle">
+            <span class="material-symbols-outlined">visibility</span>
+          </button>
+        </td>
+      </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+async function showAnalysisDetail(executionId) {
+  try {
+    const detail = await apiFetch(`/analysis/${executionId}`);
+    const output = detail.natural_language_output || 'Sin output de lenguaje natural.';
+    const structured = detail.structured_output ? JSON.stringify(detail.structured_output, null, 2) : 'N/A';
+    const confidence = detail.confidence_score != null ? `${(detail.confidence_score * 100).toFixed(1)}%` : 'N/A';
+    const completeness = detail.data_completeness != null ? `${(detail.data_completeness * 100).toFixed(1)}%` : 'N/A';
+
+    // Show in a simple overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.innerHTML = `
+      <div class="modal-content" style="max-width:700px; max-height:80vh; overflow-y:auto;">
+        <div class="modal-header">
+          <h2 class="modal-title">Detalle Ejecución IA</h2>
+          <button class="icon-btn modal-close" onclick="this.closest('.modal-overlay').remove()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="modal-body" style="padding:1rem 0;">
+          <div class="job-detail-grid">
+            <div><strong>ID:</strong> ${detail.execution_id}</div>
+            <div><strong>Agente:</strong> ${detail.agent_code || 'N/A'}</div>
+            <div><strong>Área:</strong> ${detail.orchestrator_area || 'N/A'}</div>
+            <div><strong>Estado:</strong> ${detail.status}</div>
+            <div><strong>Confianza:</strong> ${confidence}</div>
+            <div><strong>Completitud Datos:</strong> ${completeness}</div>
+            <div><strong>Modelo LLM:</strong> ${detail.llm_model_used || 'N/A'}</div>
+          </div>
+          <h4 style="margin-top:1.5rem; font-size:0.9rem;">Síntesis del Agente</h4>
+          <p style="font-size:0.9rem; line-height:1.6; margin-top:0.5rem; white-space:pre-wrap;">${output}</p>
+          ${detail.error_message ? `<div class="job-error" style="margin-top:1rem;"><strong>Error:</strong> ${detail.error_message}</div>` : ''}
+          <details style="margin-top:1rem;">
+            <summary style="cursor:pointer; font-size:0.85rem; font-weight:600;">Output Estructurado (JSON)</summary>
+            <pre style="font-size:0.75rem; background:var(--surface-variant); padding:1rem; border-radius:8px; overflow-x:auto; margin-top:0.5rem;">${structured}</pre>
+          </details>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+  } catch (err) {
+    showNotification(`Error cargando detalle: ${err.message}`, 'error');
+  }
+}
+
+async function fetchLatestAnalysis() {
+  try {
+    const data = await apiFetch('/analysis/latest/');
+    const synthesisEl = document.getElementById('ia-synthesis-text');
+    if (synthesisEl && data.natural_language_output) {
+      synthesisEl.innerHTML = data.natural_language_output;
+    }
+  } catch (err) {
+    // 404 is expected if no completed executions exist
+    console.log('No latest analysis available (expected if DB is empty)');
+  }
+}
+
+async function fetchAnalysisSummary() {
+  try {
+    const data = await apiFetch('/analysis/summary/');
+    // Update KPI if summary available
+    const conditionEl = document.getElementById('kpi-condition');
+    if (conditionEl && data.overall_condition) {
+      conditionEl.textContent = data.overall_condition;
+    }
+  } catch (err) {
+    console.log('No analysis summary available');
+  }
+}
+
+/* ============================================
+   Geo / Map Module
+   ============================================ */
+let map = null;
+let geoLayers = {};
+
 function initMapControls() {
-  const mapImage = document.getElementById('map-image');
-  const zoomIn = document.getElementById('map-zoom-in');
-  const zoomOut = document.getElementById('map-zoom-out');
-  
-  if (!mapImage || !zoomIn || !zoomOut) return;
+  const mapEl = document.getElementById('map');
+  if (!mapEl) return;
 
-  let currentZoom = 1;
-  const minZoom = 1;
-  const maxZoom = 2.5;
-  const zoomStep = 0.3;
+  map = L.map('map').setView([-33.89, -60.57], 12);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri'
+  }).addTo(map);
+}
 
-  zoomIn.addEventListener('click', () => {
-    currentZoom = Math.min(currentZoom + zoomStep, maxZoom);
-    mapImage.style.transform = `scale(${currentZoom})`;
+async function loadGeoRegions() {
+  if (!map) return;
+  try {
+    const geojson = await apiFetch('/geo/regions/');
+    if (geojson.features && geojson.features.length > 0) {
+      if (geoLayers.regions) map.removeLayer(geoLayers.regions);
+      geoLayers.regions = L.geoJSON(geojson, {
+        style: { color: '#4fc3f7', weight: 2, fillOpacity: 0.1 },
+        onEachFeature: (feature, layer) => {
+          const props = feature.properties || {};
+          layer.bindPopup(`<b>${props.name || 'Región'}</b><br>Tipo: ${props.region_type || 'N/A'}`);
+        }
+      }).addTo(map);
+      // Fit map to region bounds
+      map.fitBounds(geoLayers.regions.getBounds(), { padding: [30, 30] });
+    }
+  } catch (err) {
+    console.warn('Could not load geo regions:', err);
+    // Fallback: add static markers
+    addFallbackMarkers();
+  }
+}
+
+async function loadGeoAlerts() {
+  if (!map) return;
+  try {
+    const geojson = await apiFetch('/geo/alerts/');
+    if (geojson.features && geojson.features.length > 0) {
+      if (geoLayers.alerts) map.removeLayer(geoLayers.alerts);
+      geoLayers.alerts = L.geoJSON(geojson, {
+        pointToLayer: (feature, latlng) => {
+          const severity = feature.properties?.severity || 'info';
+          const colors = { critical: '#ef5350', severe: '#ff9800', warning: '#fdd835', info: '#42a5f5' };
+          return L.circleMarker(latlng, {
+            radius: 10, fillColor: colors[severity] || '#42a5f5',
+            color: '#fff', weight: 2, fillOpacity: 0.8
+          });
+        },
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties || {};
+          layer.bindPopup(`<b>${p.title || 'Alerta'}</b><br>Severidad: ${p.severity}<br>${p.message || ''}`);
+        }
+      }).addTo(map);
+    }
+  } catch (err) {
+    console.warn('Could not load geo alerts:', err);
+  }
+}
+
+async function loadRiskZones() {
+  if (!map) return;
+  try {
+    const geojson = await apiFetch('/geo/risk-zones/');
+    if (geojson.features && geojson.features.length > 0) {
+      if (geoLayers.risk) map.removeLayer(geoLayers.risk);
+      const riskColors = { low: '#66bb6a', medium: '#fdd835', high: '#ff9800', critical: '#ef5350' };
+      geoLayers.risk = L.geoJSON(geojson, {
+        style: (feature) => ({
+          color: riskColors[feature.properties?.risk_level] || '#999',
+          weight: 2, fillOpacity: 0.25
+        }),
+        onEachFeature: (feature, layer) => {
+          const p = feature.properties || {};
+          layer.bindPopup(`<b>Zona de Riesgo</b><br>Tipo: ${p.risk_type}<br>Nivel: ${p.risk_level}<br>${p.explanation || ''}`);
+        }
+      }).addTo(map);
+    }
+  } catch (err) {
+    console.warn('Could not load risk zones:', err);
+  }
+}
+
+function addFallbackMarkers() {
+  if (!map) return;
+  const criticalIcon = L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: '<div class="map-marker marker-critical" style="position:static; transform:none;"><span class="material-symbols-outlined">warning</span></div>',
+    iconSize: [36, 36], iconAnchor: [18, 18]
   });
-
-  zoomOut.addEventListener('click', () => {
-    currentZoom = Math.max(currentZoom - zoomStep, minZoom);
-    mapImage.style.transform = `scale(${currentZoom})`;
+  const infoIcon = L.divIcon({
+    className: 'custom-leaflet-icon',
+    html: '<div class="map-marker marker-info" style="position:static; transform:none;"><span class="material-symbols-outlined">sensors</span></div>',
+    iconSize: [36, 36], iconAnchor: [18, 18]
   });
+  L.marker([-33.885, -60.58], { icon: criticalIcon }).addTo(map)
+    .bindPopup('<b>Zona Crítica</b><br>Déficit hídrico severo detectado.');
+  L.marker([-33.895, -60.56], { icon: infoIcon }).addTo(map)
+    .bindPopup('<b>Sensor Activo</b><br>Humedad: 18.2%');
 }
 
 /* ============================================
-   Approval Flow (Button interaction)
+   Modal Handlers (Ingresar Datos)
+   ============================================ */
+function initModalHandlers() {
+  const btnIngresar = document.getElementById('btn-ingresar');
+  const modal = document.getElementById('ingreso-modal');
+  const btnClose = document.getElementById('btn-close-modal');
+  const btnCancel = document.getElementById('btn-cancel-modal');
+  const form = document.getElementById('ingreso-form');
+
+  const closeModal = () => {
+    if (modal) modal.style.display = 'none';
+    if (form) form.reset();
+  };
+
+  if (btnIngresar) {
+    btnIngresar.addEventListener('click', () => {
+      if (modal) modal.style.display = 'flex';
+    });
+  }
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+  // Click outside to close
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btnSubmit = form.querySelector('button[type="submit"]');
+      const originalHTML = btnSubmit.innerHTML;
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Enviando...';
+
+      try {
+        const formData = new FormData(form);
+        const result = await triggerJob(formData);
+        closeModal();
+        showNotification(`Ingesta iniciada: ${result.id}`, 'success');
+        fetchJobs();
+      } catch (err) {
+        console.error('Error triggering job:', err);
+        showNotification('Error al iniciar la ingesta.', 'error');
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalHTML;
+      }
+    });
+  }
+}
+
+/* ============================================
+   Approval Flow (Plan de Acción)
    ============================================ */
 function initApprovalFlow() {
   const approveBtn = document.getElementById('btn-approve');
   if (!approveBtn) return;
 
   approveBtn.addEventListener('click', () => {
-    // Visual feedback
     const originalText = approveBtn.innerHTML;
-    approveBtn.innerHTML = `
-      <span class="material-symbols-outlined" style="animation: none;">check</span>
-      Orden Aprobada
-    `;
+    approveBtn.innerHTML = '<span class="material-symbols-outlined" style="animation: none;">check</span> Orden Aprobada';
     approveBtn.style.background = '#2e7d32';
     approveBtn.style.pointerEvents = 'none';
-
-    // Show success notification
-    showNotification('✅ Orden de trabajo aprobada exitosamente. Se envió al equipo de campo.', 'success');
-
-    // Reset after delay
+    showNotification('Orden de trabajo aprobada exitosamente. Se envió al equipo de campo.', 'success');
     setTimeout(() => {
       approveBtn.innerHTML = originalText;
       approveBtn.style.background = '';
@@ -180,10 +645,58 @@ function initApprovalFlow() {
 }
 
 /* ============================================
+   Toggle Tech Details
+   ============================================ */
+function toggleTechDetails() {
+  const details = document.getElementById('tech-evidence');
+  if (!details) return;
+  details.style.display = details.style.display === 'block' ? 'none' : 'block';
+}
+
+/* ============================================
+   Scroll Animations
+   ============================================ */
+function initScrollAnimations() {
+  const elements = document.querySelectorAll('[data-animate]');
+  if (!elements.length) return;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-in');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  elements.forEach(el => observer.observe(el));
+}
+
+/* ============================================
+   KPI Counters Animation
+   ============================================ */
+function initKPICounters() {
+  const kpiValues = document.querySelectorAll('.kpi-value');
+  kpiValues.forEach(el => {
+    const target = parseInt(el.textContent, 10);
+    if (isNaN(target)) return;
+    let current = 0;
+    const increment = Math.ceil(target / 40);
+    const unit = el.querySelector('.kpi-unit');
+    const unitText = unit ? unit.textContent : '';
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      el.innerHTML = current + (unitText ? `<span class="kpi-unit">${unitText}</span>` : '');
+    }, 30);
+  });
+}
+
+/* ============================================
    Notification Toast
    ============================================ */
 function showNotification(message, type = 'info') {
-  // Remove existing notification
   const existing = document.querySelector('.notification-toast');
   if (existing) existing.remove();
 
@@ -195,65 +708,36 @@ function showNotification(message, type = 'info') {
       <span class="material-symbols-outlined">close</span>
     </button>
   `;
-
-  // Styles
   Object.assign(toast.style, {
-    position: 'fixed',
-    bottom: '24px',
-    right: '24px',
-    maxWidth: '440px',
-    padding: '14px 20px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    zIndex: '9999',
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '14px',
-    lineHeight: '1.4',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-    transform: 'translateY(20px)',
-    opacity: '0',
+    position: 'fixed', bottom: '24px', right: '24px', maxWidth: '440px',
+    padding: '14px 20px', borderRadius: '12px', display: 'flex', alignItems: 'center',
+    gap: '12px', zIndex: '9999', fontFamily: 'Inter, sans-serif', fontSize: '14px',
+    lineHeight: '1.4', boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+    transform: 'translateY(20px)', opacity: '0',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   });
-
-  // Type-specific colors
-  if (type === 'success') {
-    toast.style.background = '#e8f5e9';
-    toast.style.color = '#1b5e20';
-    toast.style.border = '1px solid rgba(46, 125, 50, 0.2)';
-  } else if (type === 'error') {
-    toast.style.background = '#ffdad6';
-    toast.style.color = '#93000a';
-    toast.style.border = '1px solid rgba(186, 26, 26, 0.2)';
-  } else {
-    toast.style.background = '#d4e3ff';
-    toast.style.color = '#001c3a';
-    toast.style.border = '1px solid rgba(0, 86, 159, 0.2)';
-  }
+  const colors = {
+    success: { bg: '#e8f5e9', color: '#1b5e20', border: 'rgba(46,125,50,0.2)' },
+    error: { bg: '#ffdad6', color: '#93000a', border: 'rgba(186,26,26,0.2)' },
+    info: { bg: '#d4e3ff', color: '#001c3a', border: 'rgba(0,86,159,0.2)' },
+  };
+  const c = colors[type] || colors.info;
+  toast.style.background = c.bg;
+  toast.style.color = c.color;
+  toast.style.border = `1px solid ${c.border}`;
 
   const closeBtn = toast.querySelector('.notification-close');
   Object.assign(closeBtn.style, {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: 'inherit',
-    opacity: '0.6',
-    padding: '0',
-    display: 'flex',
-    flexShrink: '0',
+    background: 'none', border: 'none', cursor: 'pointer',
+    color: 'inherit', opacity: '0.6', padding: '0', display: 'flex', flexShrink: '0',
   });
   closeBtn.querySelector('.material-symbols-outlined').style.fontSize = '18px';
 
   document.body.appendChild(toast);
-
-  // Animate in
   requestAnimationFrame(() => {
     toast.style.transform = 'translateY(0)';
     toast.style.opacity = '1';
   });
-
-  // Auto remove
   setTimeout(() => {
     toast.style.transform = 'translateY(20px)';
     toast.style.opacity = '0';
@@ -265,101 +749,71 @@ function showNotification(message, type = 'info') {
    Notification Button Click Handler
    ============================================ */
 document.getElementById('btn-notif')?.addEventListener('click', () => {
-  showNotification('🔔 3 alertas nuevas detectadas por el motor IA para Lote 123.', 'info');
+  showNotification('Alertas nuevas detectadas por el motor IA.', 'info');
 });
 
 /* ============================================
-   ARGPLANT API Integration — Real Data
+   ARGPLANT Dashboard — Análisis Predictivo
    ============================================ */
 
 const API_BASE = '/api/v1';
 
-/** Get current query from modal form fields. */
-function getQueryParams() {
+function getPredictParams() {
   return {
-    lot_id: document.getElementById('lot-id')?.value || 'lote-123',
-    crop: document.getElementById('crop-select')?.value || 'soy',
-    lat: parseFloat(document.getElementById('lat-input')?.value) || -33.89,
-    lon: parseFloat(document.getElementById('lon-input')?.value) || -60.57,
-    date: document.getElementById('analysis-date')?.value || '2026-07-21',
+    lot_id: document.getElementById('predict-lot-id')?.value || 'lote-123',
+    crop: document.getElementById('predict-crop')?.value || 'soy',
+    lat: parseFloat(document.getElementById('predict-lat')?.value) || -33.89,
+    lon: parseFloat(document.getElementById('predict-lon')?.value) || -60.57,
+    date: document.getElementById('predict-date')?.value || '2026-07-21',
   };
 }
 
-let analysisData = null;
-let predictData = null;
-
-/** Fetch unified analysis data from the orchestrator. */
 async function fetchAnalysis() {
-  const q = getQueryParams();
+  const q = getPredictParams();
   const params = new URLSearchParams(q);
   try {
     const res = await fetch(`${API_BASE}/analysis?${params}`);
     if (!res.ok) throw new Error(`Analysis: ${res.status}`);
-    analysisData = await res.json();
-    return analysisData;
-  } catch (err) {
-    console.warn('Analysis fetch failed:', err);
-    return null;
-  }
+    return await res.json();
+  } catch (err) { console.warn('Analysis:', err); return null; }
 }
 
-/** Fetch prediction (anomalies, risk, yield, recommendations). */
 async function fetchPrediction() {
-  const q = getQueryParams();
   try {
     const res = await fetch(`${API_BASE}/predict`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(q),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(getPredictParams()),
     });
     if (!res.ok) throw new Error(`Predict: ${res.status}`);
-    predictData = await res.json();
-    return predictData;
-  } catch (err) {
-    console.warn('Prediction fetch failed:', err);
-    return null;
-  }
+    return await res.json();
+  } catch (err) { console.warn('Predict:', err); return null; }
 }
 
-/** Update all KPI cards with real data from the prediction. */
 function updateKPIs(data) {
   if (!data) return;
-
-  // KPI 1: Soil Moisture
-  const smValue = data.anomalies?.find(a => a.type === 'water_stress');
-  if (smValue) {
-    const smEl = document.querySelector('.kpi-card:nth-child(1) .kpi-value');
-    const smSub = document.querySelector('.kpi-card:nth-child(1) .kpi-subtitle');
-    const smBar = document.querySelector('.kpi-card:nth-child(1) .kpi-bar-fill');
-    if (smEl) {
-      const pct = smValue.evidence?.soil_moisture_pct || Math.round((smValue.evidence?.soil_moisture || 0.2) * 100);
-      smEl.innerHTML = `${pct}<span class="kpi-unit">%</span>`;
-    }
-    if (smSub) smSub.textContent = smValue.description;
-    if (smBar) smBar.style.width = `${Math.min(100, (smValue.evidence?.soil_moisture || 0.2) * 200)}%`;
+  const smEl = document.querySelector('.kpi-card:nth-child(1) .kpi-value');
+  const smSub = document.querySelector('.kpi-card:nth-child(1) .kpi-subtitle');
+  const smBar = document.querySelector('.kpi-card:nth-child(1) .kpi-bar-fill');
+  const smAnomaly = data.anomalies?.find(a => a.type === 'water_stress');
+  if (smAnomaly && smEl) {
+    const pct = smAnomaly.evidence?.soil_moisture_pct || Math.round((smAnomaly.evidence?.soil_moisture || 0.2) * 100);
+    smEl.innerHTML = `${pct}<span class="kpi-unit">%</span>`;
+    if (smBar) smBar.style.width = `${Math.min(100, pct * 2)}%`;
   }
+  if (smAnomaly && smSub) smSub.textContent = smAnomaly.description;
 
-  // KPI 2: Risk Score
   if (data.risk_assessment) {
     const riskEl = document.querySelector('.kpi-card:nth-child(2) .kpi-value');
     const riskScore = document.querySelector('.kpi-card:nth-child(2) .kpi-score');
-    const riskSub = document.querySelector('.kpi-card:nth-child(2) .kpi-subtitle');
-    const segments = document.querySelectorAll('.kpi-card:nth-child(2) .segment');
-    if (riskEl) riskEl.textContent = data.risk_assessment.overall === 'critical' ? 'Crítico' : 
-      data.risk_assessment.overall === 'high' ? 'Alto' : 'Medio';
+    if (riskEl) riskEl.textContent = data.risk_assessment.overall === 'critical' ? 'Crítico' : data.risk_assessment.overall === 'high' ? 'Alto' : 'Medio';
     if (riskScore) riskScore.textContent = `Score: ${data.risk_assessment.score}`;
-    if (riskSub && data.risk_assessment.factors?.length) {
-      riskSub.textContent = `Factor principal: ${data.risk_assessment.factors[0].name} (${data.risk_assessment.factors[0].score})`;
-    }
   }
 
-  // KPI 3: Affected Area (from yield loss)
   if (data.yield_prediction) {
     const lossEl = document.querySelector('.kpi-card:nth-child(3) .kpi-value');
     if (lossEl) lossEl.innerHTML = `${data.yield_prediction.loss_pct}<span class="kpi-unit">%</span>`;
   }
 
-  // KPI 4: Economic Loss
   if (data.economic_impact) {
     const econEl = document.querySelector('.kpi-card:nth-child(4) .kpi-value');
     const lossM = Math.round(data.economic_impact.estimated_loss_ars / 1000000);
@@ -367,140 +821,60 @@ function updateKPIs(data) {
   }
 }
 
-/** Update the AI Synthesis banner with real data. */
-function updateSynthesis(data) {
-  const banner = document.querySelector('#ai-synthesis .ai-synthesis-content p');
-  if (!banner || !data) return;
-
-  const q = getQueryParams();
-  const crop = q.crop === 'soy' ? 'Soja' : 'Maíz';
-  const risk = data.risk_assessment?.overall || 'medio';
-  const anomalies = data.anomalies?.length || 0;
-  
-  banner.innerHTML = `
-    <strong>Síntesis IA:</strong> El lote
-    <span class="inline-badge">Lote 123 (${crop})</span>
-    presenta riesgo <strong>${risk}</strong> con ${anomalies} anomalía(s) detectada(s).
-    ${data.recommendations?.[0]?.action || 'Se recomienda continuar monitoreo.'}
-  `;
-}
-
-/** Update alerts panel from prediction data. */
-function updateAlerts(data) {
+function updateAlertsPanel(data) {
   const alertsList = document.getElementById('alerts-list');
   if (!alertsList || !data?.alerts?.length) return;
-
-  const severityClass = { critical: 'critical', high: 'warning', medium: 'warning' };
-  const severityBadge = { critical: 'CRÍTICO', high: 'PRECAUCIÓN', medium: 'INFO' };
-
-  alertsList.innerHTML = data.alerts.map((a, i) => `
-    <div class="alert-card ${severityClass[a.type] || 'info'}">
-      <div class="alert-stripe ${severityClass[a.type] || 'info'}"></div>
-      <div class="alert-top">
-        <h3 class="alert-title">${a.title}</h3>
-        <span class="severity-badge ${severityClass[a.type] || 'info'}">${severityBadge[a.type] || 'INFO'}</span>
-      </div>
-      <div class="alert-audience">
-        ${(a.audience || ['PRODUCTOR']).map(t => `<span class="audience-tag">${t.toUpperCase()}</span>`).join('')}
-      </div>
+  const sevClass = { critical: 'critical', high: 'warning', medium: 'warning' };
+  const sevBadge = { critical: 'CRÍTICO', high: 'PRECAUCIÓN', medium: 'INFO' };
+  alertsList.innerHTML = data.alerts.map(a => `
+    <div class="alert-card ${sevClass[a.type] || 'info'}">
+      <div class="alert-stripe ${sevClass[a.type] || 'info'}"></div>
+      <div class="alert-top"><h3 class="alert-title">${a.title}</h3><span class="severity-badge ${sevClass[a.type] || 'info'}">${sevBadge[a.type] || 'INFO'}</span></div>
       <p class="alert-description">${a.message}</p>
-    </div>
-  `).join('');
+    </div>`).join('');
+  document.querySelector('.alert-badge-count').textContent = `${data.alerts.length} ${data.alerts.length === 1 ? 'Nueva' : 'Nuevas'}`;
 }
 
-/** SSE connection for real-time alerts. */
 function connectSSE() {
-  const evtSource = new EventSource(`${API_BASE}/alerts/stream`);
-  
-  evtSource.addEventListener('connected', () => {
-    console.log('SSE connected');
-  });
-
-  evtSource.onmessage = (event) => {
+  const es = new EventSource(`${API_BASE}/alerts/stream`);
+  es.addEventListener('connected', () => console.log('SSE connected'));
+  es.onmessage = (e) => {
     try {
-      const alert = JSON.parse(event.data);
-      showNotification(`🔔 Nueva alerta: ${alert.title}`, alert.severity === 'critical' ? 'error' : 'info');
-    } catch (e) {
-      // keepalive comment
-    }
+      const a = JSON.parse(e.data);
+      showNotification(`🔔 ${a.title}`, a.severity === 'critical' ? 'error' : 'info');
+    } catch (_) {}
   };
-
-  evtSource.onerror = () => {
-    console.warn('SSE connection lost, reconnecting...');
-  };
+  es.onerror = () => console.warn('SSE disconnected');
 }
 
-/** Main: load data and update UI. */
-async function loadDashboard() {
-  const q = getQueryParams();
+async function runPrediction() {
+  const q = getPredictParams();
   showNotification(`🔄 Analizando lote ${q.lot_id} (${q.crop})...`, 'info');
-
-  const [analysis, prediction] = await Promise.all([
-    fetchAnalysis(),
-    fetchPrediction(),
-  ]);
-
+  const prediction = await fetchPrediction();
   if (prediction) {
     updateKPIs(prediction);
-    updateSynthesis(prediction);
-    updateAlerts(prediction);
-    updatePills(q);
+    updateAlertsPanel(prediction);
   }
-
-  if (analysis) {
-    console.log('Analysis data loaded:', analysis);
-  }
-
-  showNotification('✅ Dashboard actualizado con datos reales', 'success');
+  showNotification('✅ Análisis completado', 'success');
 }
 
-/** Wire the "Ingresar Datos" button — open modal. */
+// Modal handlers
 document.getElementById('btn-ingresar')?.addEventListener('click', () => {
-  openModal();
+  document.getElementById('predict-modal').style.display = 'flex';
 });
-
-/** Close modal on close button or overlay click. */
-document.getElementById('modal-close')?.addEventListener('click', closeModal);
-document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
-  if (e.target === document.getElementById('modal-overlay')) closeModal();
+document.getElementById('btn-close-predict-modal')?.addEventListener('click', () => {
+  document.getElementById('predict-modal').style.display = 'none';
 });
-
-/** Preset buttons — set coordinates. */
-document.querySelectorAll('.preset-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.getElementById('lat-input').value = btn.dataset.lat;
-    document.getElementById('lon-input').value = btn.dataset.lon;
-  });
+document.getElementById('btn-cancel-predict-modal')?.addEventListener('click', () => {
+  document.getElementById('predict-modal').style.display = 'none';
 });
-
-/** Handle form submit — run analysis. */
-document.getElementById('data-form')?.addEventListener('submit', async (e) => {
+document.getElementById('predict-form')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  closeModal();
-  await loadDashboard();
+  document.getElementById('predict-modal').style.display = 'none';
+  await runPrediction();
 });
 
-/** Update filter pills with current query data. */
-function updatePills(q) {
-  const pills = document.querySelectorAll('.filters-pills .pill');
-  if (pills.length >= 4) {
-    pills[0].innerHTML = `<span class="material-symbols-outlined pill-icon">location_on</span> Lote ${q.lot_id}`;
-    pills[1].innerHTML = `<span class="material-symbols-outlined pill-icon">landscape</span> Lat: ${q.lat} Lon: ${q.lon}`;
-    pills[2].innerHTML = `<span class="material-symbols-outlined pill-icon">eco</span> ${q.crop === 'soy' ? 'Soja' : 'Maíz'}`;
-    pills[3].innerHTML = `<span class="material-symbols-outlined pill-icon">calendar_today</span> ${q.date}`;
-  }
-}
-
-function openModal() {
-  document.getElementById('modal-overlay').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
-}
-
-// Auto-load on page open
 document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(loadDashboard, 1500); // delay for animations
+  setTimeout(runPrediction, 2000);
   connectSSE();
 });
