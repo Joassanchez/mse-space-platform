@@ -718,10 +718,10 @@ body {
 .map-image {
   position: absolute;
   inset: 0;
-  background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBS2KD1w0L8qvZCQhK9XQnqnsBbM6FxwTn0Oq8217zb9LB7hFu8MrHp1u76SuFz6XjkPE6CTRJqTt5bra9OfCfDchK9_fJJVk7dh7PYn3QEii9OCV5qMLocHc2bfwPROtWnJ20WRhbyZ3lP3Eor3XtrqILli819BrR8dJhZK9nsXEN32hcSTsXIEjecB5chSBRnGsznkCwYSEJS2uFKC4DC2jkPrz_2oBm4ay6D4HRWLc2Bu8ORKj7mwtYVzi3Bam-I4QX_NsZNSRo');
   background-size: cover;
   background-position: center;
-  transition: transform 0.5s ease;
+  background-repeat: no-repeat;
+  transition: transform 0.5s ease, background-image 0.3s ease;
 }
 
 .map-controls {

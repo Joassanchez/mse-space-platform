@@ -1117,7 +1117,21 @@ function updateMap(lat, lon) {
   const tileUrl = `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
 
   if (mapImage) {
-    mapImage.style.backgroundImage = `url('${tileUrl}')`;
+    // Try OSM tile first — with fallback on error
+    const img = new Image();
+    img.onload = () => {
+      mapImage.style.backgroundImage = `url('${tileUrl}')`;
+    };
+    img.onerror = () => {
+      // Fallback: dark background with grid pattern
+      mapImage.style.backgroundImage = `
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+        radial-gradient(ellipse at center, #1a3a1a 0%, #0d1f0d 100%)
+      `;
+      mapImage.style.backgroundSize = '40px 40px, 40px 40px, cover';
+    };
+    img.src = tileUrl;
     mapImage.style.backgroundSize = 'cover';
     mapImage.style.backgroundPosition = 'center';
   }
