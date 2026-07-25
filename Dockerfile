@@ -19,6 +19,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY argplant/ ./argplant/
 COPY data/ ./data/
 COPY migrations/ ./migrations/
+COPY static/ ./static/
 COPY alembic.ini .
 
 EXPOSE 8000

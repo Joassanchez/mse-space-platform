@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from argplant.shared.config import settings
 from argplant.shared.database import engine
@@ -69,7 +70,10 @@ async def health_check() -> JSONResponse:
     return JSONResponse(content={"status": "ok"})
 
 
-# Router mounts — uncommented as modules are implemented
+# Static frontend — served at root
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Router mounts
 from argplant.modules.agroclimate.router import router as agroclimate_router
 from argplant.modules.agronomy.router import router as agronomy_router
 from argplant.modules.economy.router import router as economy_router

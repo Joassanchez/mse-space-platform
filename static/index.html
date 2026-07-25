@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARGPLANT AI — Motor Inteligente de Decisiones Agrícolas</title>
+  <meta name="description" content="Plataforma inteligente de predicción e impacto económico agrícola. Integra información satelital, meteorológica y agronómica para optimizar decisiones operativas.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="topbar" id="topbar">
+    <div class="topbar-left">
+      <div class="logo">
+        <span class="logo-icon material-symbols-outlined">satellite_alt</span>
+        <span class="logo-text">ARGPLANT <span class="logo-accent">AI</span></span>
+      </div>
+      <nav class="breadcrumb">
+        <span class="breadcrumb-item">Monitor General</span>
+        <span class="breadcrumb-sep material-symbols-outlined">chevron_right</span>
+        <span class="breadcrumb-item active">Lote 123 Pergamino</span>
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn" title="Notificaciones" id="btn-notif">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="notif-badge">3</span>
+      </button>
+      <button class="topbar-btn" title="Configuración">
+        <span class="material-symbols-outlined">settings</span>
+      </button>
+      <div class="user-avatar" title="Usuario">
+        <span class="material-symbols-outlined">person</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+      <!-- Filter Pills Row -->
+      <section class="filters-row" id="filters">
+        <div class="filters-pills">
+          <span class="pill">
+            <span class="material-symbols-outlined pill-icon">location_on</span>
+            Región: Pergamino
+          </span>
+          <span class="pill">
+            <span class="material-symbols-outlined pill-icon">landscape</span>
+            Lote 123
+          </span>
+          <span class="pill">
+            <span class="material-symbols-outlined pill-icon">eco</span>
+            Soja
+          </span>
+          <span class="pill">
+            <span class="material-symbols-outlined pill-icon">calendar_today</span>
+            2026-07-21
+          </span>
+        </div>
+        <button class="btn-primary" id="btn-ingresar">
+          <span class="material-symbols-outlined">add</span>
+          Ingresar Datos
+        </button>
+      </section>
+
+      <!-- KPI Cards Row -->
+      <section class="kpi-grid" id="kpi-section">
+        <!-- KPI 1: Humedad del Suelo -->
+        <div class="kpi-card" data-animate="fade-up" style="--delay: 0.05s">
+          <div class="kpi-bg-icon">
+            <span class="material-symbols-outlined">water_drop</span>
+          </div>
+          <p class="kpi-label">HUMEDAD DEL SUELO</p>
+          <div class="kpi-value-row">
+            <span class="kpi-value">65<span class="kpi-unit">%</span></span>
+            <span class="kpi-change negative">
+              <span class="material-symbols-outlined">arrow_downward</span>
+              -15% vs 7d
+            </span>
+          </div>
+          <div class="kpi-bar">
+            <div class="kpi-bar-fill critical" style="width: 65%"></div>
+          </div>
+          <p class="kpi-subtitle">Déficit en capa arable (0-20cm)</p>
+        </div>
+
+        <!-- KPI 2: Riesgo General -->
+        <div class="kpi-card" data-animate="fade-up" style="--delay: 0.1s">
+          <div class="kpi-bg-icon">
+            <span class="material-symbols-outlined">warning</span>
+          </div>
+          <p class="kpi-label">RIESGO GENERAL</p>
+          <div class="kpi-value-row">
+            <span class="kpi-value">Medio</span>
+            <span class="kpi-score">Score: 65</span>
+          </div>
+          <div class="risk-segments">
+            <div class="segment active-green"></div>
+            <div class="segment active-green"></div>
+            <div class="segment active-amber"></div>
+            <div class="segment"></div>
+            <div class="segment"></div>
+          </div>
+          <p class="kpi-subtitle">Factor principal: Estrés hídrico (78)</p>
+        </div>
+
+        <!-- KPI 3: Superficie Afectada -->
+        <div class="kpi-card" data-animate="fade-up" style="--delay: 0.15s">
+          <div class="kpi-bg-icon">
+            <span class="material-symbols-outlined">landscape</span>
+          </div>
+          <p class="kpi-label">SUPERFICIE AFECTADA</p>
+          <div class="kpi-value-row">
+            <span class="kpi-value">15<span class="kpi-unit">%</span></span>
+            <span class="kpi-score">37.5 ha. / 250 ha.</span>
+          </div>
+          <div class="sparkline-container">
+            <svg class="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
+              <path d="M0,25 Q10,25 20,20 T40,15 T60,25 T80,10 T100,5" />
+            </svg>
+          </div>
+          <p class="kpi-subtitle">Expansión del daño en 48hs</p>
+        </div>
+
+        <!-- KPI 4: Pérdida Proyectada -->
+        <div class="kpi-card" data-animate="fade-up" style="--delay: 0.2s">
+          <div class="kpi-bg-accent"></div>
+          <p class="kpi-label">PÉRDIDA PROYECTADA</p>
+          <div class="kpi-value-row loss">
+            <span class="kpi-value loss-value">-$12.5M</span>
+          </div>
+          <p class="kpi-subtitle" style="margin-top: 8px">ARS Estimados / Campaña</p>
+        </div>
+      </section>
+
+      <!-- AI Synthesis Banner -->
+      <section class="ai-synthesis" id="ai-synthesis" data-animate="fade-up" style="--delay: 0.25s">
+        <div class="ai-synthesis-icon">
+          <span class="material-symbols-outlined">smart_toy</span>
+        </div>
+        <div class="ai-synthesis-content">
+          <p>
+            <strong>Síntesis IA:</strong> El lote
+            <span class="inline-badge">Lote 123 (Soja)</span>
+            atraviesa una fase crítica (BBCH 65-75). El déficit hídrico sostenido durante las últimas 72hs, combinado con estrés térmico (&gt;32°C), proyecta una caída abrupta en la tasa de cuajado. Se requiere intervención urgente para mitigar aborto floral.
+          </p>
+        </div>
+      </section>
+
+      <!-- Main Split: Map + Alerts -->
+      <section class="main-split" id="main-split">
+        <!-- Left: NDVI Map -->
+        <div class="map-panel" data-animate="fade-up" style="--delay: 0.3s">
+          <div class="panel-header">
+            <div class="panel-title-group">
+              <span class="material-symbols-outlined panel-icon">satellite_alt</span>
+              <h2 class="panel-title">Análisis Espacial NDVI</h2>
+            </div>
+            <div class="panel-actions">
+              <button class="icon-btn" title="Capas NDVI">
+                <span class="material-symbols-outlined">layers</span>
+              </button>
+              <button class="icon-btn" title="Humedad">
+                <span class="material-symbols-outlined">water_drop</span>
+              </button>
+            </div>
+          </div>
+          <div class="map-container" id="map-container">
+            <div class="map-image" id="map-image"></div>
+            <!-- Map Controls -->
+            <div class="map-controls">
+              <button class="map-ctrl-btn" id="map-zoom-in" title="Zoom In">
+                <span class="material-symbols-outlined">add</span>
+              </button>
+              <div class="map-ctrl-divider"></div>
+              <button class="map-ctrl-btn" id="map-zoom-out" title="Zoom Out">
+                <span class="material-symbols-outlined">remove</span>
+              </button>
+            </div>
+            <!-- Map Legend -->
+            <div class="map-legend">
+              <p class="legend-title">Índice NDVI</p>
+              <div class="legend-bar">
+                <div class="legend-seg" style="background: #ba1a1a"></div>
+                <div class="legend-seg" style="background: #fed3c7"></div>
+                <div class="legend-seg" style="background: #88d982"></div>
+                <div class="legend-seg" style="background: #0d631b"></div>
+              </div>
+              <div class="legend-labels">
+                <span>Bajo</span>
+                <span>Alto</span>
+              </div>
+            </div>
+            <!-- Location Markers -->
+            <div class="map-marker marker-critical" style="top: 35%; left: 45%" title="Zona crítica">
+              <span class="material-symbols-outlined">warning</span>
+            </div>
+            <div class="map-marker marker-info" style="top: 55%; left: 30%" title="Sensor activo">
+              <span class="material-symbols-outlined">sensors</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Active Alerts -->
+        <div class="alerts-panel" data-animate="fade-up" style="--delay: 0.35s">
+          <div class="panel-header">
+            <h2 class="panel-title">Alertas Activas</h2>
+            <span class="alert-badge-count">4 Nuevas</span>
+          </div>
+          <div class="alerts-list" id="alerts-list">
+            <!-- Alert 1: Critical -->
+            <div class="alert-card critical">
+              <div class="alert-stripe critical"></div>
+              <div class="alert-top">
+                <h3 class="alert-title">Estrés hídrico severo — Lote 123</h3>
+                <span class="severity-badge critical">CRÍTICO</span>
+              </div>
+              <div class="alert-audience">
+                <span class="audience-tag">PRODUCTOR</span>
+                <span class="audience-tag">INGENIERO</span>
+              </div>
+              <p class="alert-description">R4 crítico. Requiere acción inmediata. NDVI 15% debajo del umbral.</p>
+              <!-- Expandable Technical Detail -->
+              <div class="expandable-section" id="alert-detail-1">
+                <button class="expand-btn" onclick="toggleExpand('alert-detail-1')">
+                  <span class="material-symbols-outlined">expand_more</span>
+                  Detalle técnico avanzado
+                </button>
+                <div class="expand-content">
+                  <div class="tech-grid">
+                    <div class="tech-item">
+                      <span class="tech-label">NDVI Actual</span>
+                      <span class="tech-value error">0.38</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">NDVI Esperado</span>
+                      <span class="tech-value">0.53</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Humedad 0-20cm</span>
+                      <span class="tech-value error">18.2%</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Fuente SAR</span>
+                      <span class="tech-value">SAOCOM 1A</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Fecha Captura</span>
+                      <span class="tech-value">2026-07-20</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Confianza IA</span>
+                      <span class="tech-value">94%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="alert-action-btn">
+                Analizar Mitigación
+                <span class="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+
+            <!-- Alert 2: Warning -->
+            <div class="alert-card warning">
+              <div class="alert-stripe warning"></div>
+              <div class="alert-top">
+                <h3 class="alert-title">Alerta de Estrés Térmico</h3>
+                <span class="severity-badge warning">PRECAUCIÓN</span>
+              </div>
+              <div class="alert-audience">
+                <span class="audience-tag">INGENIERO</span>
+              </div>
+              <p class="alert-description">Temperaturas &gt;32°C proyectadas para los próximos 3 días. Monitorear evapotranspiración en sector este.</p>
+              <div class="expandable-section" id="alert-detail-2">
+                <button class="expand-btn" onclick="toggleExpand('alert-detail-2')">
+                  <span class="material-symbols-outlined">expand_more</span>
+                  Detalle técnico avanzado
+                </button>
+                <div class="expand-content">
+                  <div class="tech-grid">
+                    <div class="tech-item">
+                      <span class="tech-label">Temp. Máx. Proy.</span>
+                      <span class="tech-value warning-val">34.2°C</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">ETP Estimada</span>
+                      <span class="tech-value">6.8 mm/día</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Duración Estimada</span>
+                      <span class="tech-value">72hs</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Fuente Meteo</span>
+                      <span class="tech-value">SMN + ERA5</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="alert-link-btn">
+                Ver pronóstico detallado
+              </button>
+            </div>
+
+            <!-- Alert 3: Info -->
+            <div class="alert-card info">
+              <div class="alert-stripe info"></div>
+              <div class="alert-top">
+                <h3 class="alert-title">Ventana de Aplicación</h3>
+                <span class="severity-badge info">INFO</span>
+              </div>
+              <div class="alert-audience">
+                <span class="audience-tag">CONTRATISTA</span>
+              </div>
+              <p class="alert-description">Condiciones óptimas de viento (12km/h) detectadas para mañana 06:00 AM - 10:00 AM.</p>
+              <div class="expandable-section" id="alert-detail-3">
+                <button class="expand-btn" onclick="toggleExpand('alert-detail-3')">
+                  <span class="material-symbols-outlined">expand_more</span>
+                  Detalle técnico avanzado
+                </button>
+                <div class="expand-content">
+                  <div class="tech-grid">
+                    <div class="tech-item">
+                      <span class="tech-label">Viento (km/h)</span>
+                      <span class="tech-value">12</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Dirección</span>
+                      <span class="tech-value">SSE</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Prob. Lluvia</span>
+                      <span class="tech-value">5%</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Humedad Rel.</span>
+                      <span class="tech-value">62%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alert 4: Risk Trend -->
+            <div class="alert-card warning">
+              <div class="alert-stripe warning"></div>
+              <div class="alert-top">
+                <h3 class="alert-title">Tendencia de Sequía Regional</h3>
+                <span class="severity-badge warning">PRECAUCIÓN</span>
+              </div>
+              <div class="alert-audience">
+                <span class="audience-tag">PRODUCTOR</span>
+                <span class="audience-tag">INGENIERO</span>
+              </div>
+              <p class="alert-description">Índice SPI negativo sostenido durante 21 días. Probabilidad de sequía agrícola moderada en próximas 2 semanas.</p>
+              <div class="expandable-section" id="alert-detail-4">
+                <button class="expand-btn" onclick="toggleExpand('alert-detail-4')">
+                  <span class="material-symbols-outlined">expand_more</span>
+                  Detalle técnico avanzado
+                </button>
+                <div class="expand-content">
+                  <div class="tech-grid">
+                    <div class="tech-item">
+                      <span class="tech-label">SPI-30</span>
+                      <span class="tech-value error">-1.42</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Precip. Acum. 30d</span>
+                      <span class="tech-value">12mm</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Normal Histórico</span>
+                      <span class="tech-value">48mm</span>
+                    </div>
+                    <div class="tech-item">
+                      <span class="tech-label">Fuente</span>
+                      <span class="tech-value">SMAP L4</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Action Plan Section -->
+      <section class="action-plan" id="action-plan" data-animate="fade-up" style="--delay: 0.4s">
+        <div class="action-plan-accent-bar"></div>
+        <div class="action-plan-body">
+          <div class="action-plan-main">
+            <div class="action-plan-header">
+              <span class="material-symbols-outlined action-plan-sparkle">auto_awesome</span>
+              <h2 class="action-plan-title">Plan de Acción Recomendado</h2>
+            </div>
+            <p class="action-plan-desc">
+              Ejecutar <strong>riego suplementario (25mm)</strong> focalizado en la zona Norte del Lote 123 durante la ventana nocturna de hoy para minimizar evaporación. Complementar con aplicación de bioestimulantes anti-estrés térmico en próxima pasada.
+            </p>
+            <div class="action-plan-buttons">
+              <button class="btn-primary btn-lg" id="btn-approve">
+                Aprobar Orden de Trabajo
+                <span class="material-symbols-outlined">check_circle</span>
+              </button>
+              <button class="btn-secondary btn-lg" id="btn-tech-details" onclick="toggleTechDetails()">
+                Datos Técnicos
+                <span class="material-symbols-outlined expand-icon">expand_more</span>
+              </button>
+            </div>
+          </div>
+          <!-- Economic Impact Card -->
+          <div class="econ-impact-card">
+            <span class="econ-label">IMPACTO ECONÓMICO ROI</span>
+            <p class="econ-desc">La ejecución de esta acción protege el potencial de rinde en un <strong>+8%</strong>.</p>
+            <div class="econ-bottom">
+              <span class="econ-metric-label">Pérdida Evitada:</span>
+              <span class="econ-metric-value">+$9.0M ARS</span>
+            </div>
+          </div>
+        </div>
+        <!-- Expandable Technical Evidence -->
+        <div class="tech-evidence" id="tech-evidence">
+          <h4 class="tech-evidence-title">EVIDENCIA ANALÍTICA (TELEMETRÍA RAW)</h4>
+          <div class="tech-evidence-grid">
+            <div class="tech-evidence-item">
+              <span class="tech-evidence-label">NDVI Gap (vs Histórico)</span>
+              <span class="tech-evidence-value error">-0.13 <span class="tech-sub">(σ -2.1)</span></span>
+            </div>
+            <div class="tech-evidence-item">
+              <span class="tech-evidence-label">Percentil Humedad (0-30cm)</span>
+              <span class="tech-evidence-value warning-val">12% <span class="tech-sub">(Crítico)</span></span>
+            </div>
+            <div class="tech-evidence-item">
+              <span class="tech-evidence-label">Déficit Hídrico Acum.</span>
+              <span class="tech-evidence-value">35mm <span class="tech-sub">últimos 14d</span></span>
+            </div>
+            <div class="tech-evidence-item">
+              <span class="tech-evidence-label">ETP vs ETR</span>
+              <span class="tech-evidence-value error">6.2 vs 2.1 mm/d</span>
+            </div>
+            <div class="tech-evidence-item">
+              <span class="tech-evidence-label">Fase Fenológica</span>
+              <span class="tech-evidence-value">R4 (Cuajado)</span>
+            </div>
+            <div class="tech-evidence-item">
+              <span class="tech-evidence-label">Rinde Proyectado</span>
+              <span class="tech-evidence-value error">2.8 tn/ha <span class="tech-sub">(-22%)</span></span>
+            </div>
+          </div>
+          <div class="tech-sources">
+            <span class="tech-source-tag">
+              <span class="material-symbols-outlined">satellite</span> SAOCOM 1A
+            </span>
+            <span class="tech-source-tag">
+              <span class="material-symbols-outlined">satellite_alt</span> SMAP L4
+            </span>
+            <span class="tech-source-tag">
+              <span class="material-symbols-outlined">cloud</span> SMN
+            </span>
+            <span class="tech-source-tag">
+              <span class="material-symbols-outlined">analytics</span> ERA5 Reanalysis
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Decision History Timeline (Mini) -->
+      <section class="timeline-section" id="timeline" data-animate="fade-up" style="--delay: 0.45s">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="material-symbols-outlined panel-icon">history</span>
+            <h2 class="panel-title">Historial de Decisiones IA</h2>
+          </div>
+          <button class="icon-btn" title="Ver todo">
+            <span class="material-symbols-outlined">open_in_new</span>
+          </button>
+        </div>
+        <div class="timeline-track">
+          <div class="timeline-item">
+            <div class="timeline-dot active"></div>
+            <div class="timeline-content">
+              <span class="timeline-date">Hoy 14:32</span>
+              <p class="timeline-text">IA detectó estrés hídrico severo. Recomendación: riego 25mm zona Norte.</p>
+              <span class="timeline-tag critical">Acción Urgente</span>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <span class="timeline-date">Ayer 09:15</span>
+              <p class="timeline-text">Alerta térmica generada. Umbral 32°C superado en pronóstico 72hs.</p>
+              <span class="timeline-tag warning">Monitoreo</span>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content">
+              <span class="timeline-date">22/07 11:00</span>
+              <p class="timeline-text">Ventana de aplicación fitosanitaria aprobada. Ejecutada con éxito.</p>
+              <span class="timeline-tag success">Completada</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <span class="logo-text footer-logo">ARGPLANT <span class="logo-accent">AI</span></span>
+        <span class="footer-sep">|</span>
+        <span class="footer-copy">Motor Inteligente de Decisiones Agrícolas © 2026</span>
+      </div>
+      <div class="footer-right">
+        <span class="footer-source">
+          <span class="material-symbols-outlined">satellite</span> SAOCOM · SMAP · NISAR
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
