@@ -862,17 +862,28 @@ function updateKPIEconomy(analysis, predict) {
   const sub = document.querySelector('.kpi-card:nth-child(4) .kpi-subtitle');
   const label = document.querySelector('.kpi-card:nth-child(4) .kpi-label');
 
-  const price = analysis?.economy?.latest_price || predict?.economic_impact;
+  // Try prediction economic impact first
   if (predict?.economic_impact?.estimated_loss_ars > 0) {
     if (label) label.textContent = 'PÉRDIDA PROYECTADA';
     const lossM = Math.round(predict.economic_impact.estimated_loss_ars / 1000000);
     if (el) el.innerHTML = `-$${lossM}M`;
-    if (sub) sub.textContent = `ARS Estimados / Campaña`;
-  } else if (price?.promedio) {
-    if (label) label.textContent = 'PRECIO SOJA (MATba)';
-    if (el) el.innerHTML = `$${price.promedio.toLocaleString()}<span class="kpi-unit">/ton</span>`;
-    if (sub) sub.textContent = `Fecha: ${price.fecha || ''}`;
+    if (sub) sub.textContent = `ARS Estimados / Campaña (${predict.economic_impact.loss_pct}% pérdida)`;
+    return;
   }
+
+  // Try analysis economy data
+  const eco = analysis?.economy;
+  if (eco?.latest_price?.promedio) {
+    if (label) label.textContent = 'PRECIO SOJA (MAGyP)';
+    if (el) el.innerHTML = `$${(eco.latest_price.promedio / 1000).toFixed(0)}K<span class="kpi-unit">/ton</span>`;
+    if (sub) sub.textContent = `Fecha: ${eco.latest_price.fecha || ''} · Puerto: Rosario`;
+    return;
+  }
+
+  // Economy unavailable — show info
+  if (label) label.textContent = 'DATOS ECONÓMICOS';
+  if (el) el.innerHTML = '—';
+  if (sub) sub.textContent = 'MAGyP no disponible — configure ENABLE_MAGYP=True';
 }
 
 /* ── AI Synthesis ── */
@@ -893,6 +904,43 @@ function updateSynthesis(analysis, predict) {
     ${current?.temp != null ? `con <strong>${current.temp}°C</strong> y <strong>${current.humidity}%</strong> de humedad.` : '.'}
     Riesgo <strong>${risk}</strong>. ${rec}
   `;
+
+  // Async: enrich with AI-generated insight
+  enrichSynthesisWithAI(analysis, predict).then(aiText => {
+    if (aiText) {
+      banner.innerHTML = `
+        <strong>Síntesis IA:</strong> ${aiText}
+      `;
+    }
+  });
+}
+
+async function enrichSynthesisWithAI(analysis, predict) {
+  if (!analysis && !predict) return null;
+  const q = getPredictParams();
+  const cropName = q.crop === 'soy' ? 'Soja' : 'Maíz';
+  const stage = analysis?.agronomy?.current_stage;
+  const temp = analysis?.agroclimate?.current?.temp;
+  const risk = predict?.risk_assessment;
+  const anomalies = predict?.anomalies || [];
+
+  const prompt = `Sos un ingeniero agrónomo argentino. Resumí en 3 oraciones claras y accionables el estado del lote ${q.lot_id} en Pergamino, Buenos Aires.
+Cultivo: ${cropName}. Fecha: ${q.date}.
+${stage ? `Etapa: ${stage.name} (BBCH ${stage.bbch_code}), sensibilidad hídrica: ${stage.water_stress_sensitivity || 'normal'}.` : ''}
+${temp != null ? `Temperatura actual: ${temp}°C.` : ''}
+${risk ? `Riesgo general: ${risk.overall} (score ${risk.score}/100).` : ''}
+${anomalies.length ? `Anomalías detectadas: ${anomalies.map(a => a.description).join(' | ')}` : 'Sin anomalías detectadas.'}
+Incluí recomendación concreta si hay riesgo.`;
+
+  try {
+    const res = await fetch(`${API_BASE}/chat`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.response;
+  } catch { return null; }
 }
 
 /* ── Technical Evidence ── */
