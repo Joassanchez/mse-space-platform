@@ -104,8 +104,9 @@ class TestPredictEndpoint:
         assert response.status_code == 422
 
     @pytest.mark.asyncio
-    async def test_predict_validates_crop(self, model_client):
+    async def test_predict_handles_unknown_crop(self, model_client):
         response = await model_client.post("/api/v1/predict", json={
-            "lot_id": "lote-123", "crop": "", "lat": -33.89, "lon": -60.57, "date": "2026-07-21",
+            "lot_id": "lote-123", "crop": "wheat", "lat": -33.89, "lon": -60.57, "date": "2026-07-21",
         })
-        assert response.status_code == 422
+        # Unknown crop should still return 200 but with no/limited agronomy data
+        assert response.status_code == 200

@@ -8,12 +8,15 @@ from __future__ import annotations
 
 import logging
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, HTTPException
 
 from argplant.modules.analysis.orchestrator import AnalysisOrchestrator
 from argplant.modules.analysis.models import AnalysisRequest
 from argplant.modules.model.engine import RuleEngine
 from argplant.modules.model.models import PredictRequest, PredictResponse
+from argplant.shared.cache import _get_redis
+from argplant.shared.config import settings
 
 logger = logging.getLogger("argplant.model")
 
@@ -33,7 +36,8 @@ async def predict(request: PredictRequest) -> PredictResponse:
     Returns 502 if the analysis orchestrator fails to gather data.
     """
     # 1. Gather raw data via the analysis orchestrator
-    orchestrator = AnalysisOrchestrator()
+    redis = await _get_redis()
+    orchestrator = AnalysisOrchestrator(redis=redis)
     analysis_req = AnalysisRequest(
         lot_id=request.lot_id,
         crop=request.crop,

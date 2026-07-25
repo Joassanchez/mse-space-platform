@@ -70,7 +70,7 @@ def analysis_healthy() -> dict:
 
 
 @pytest.fixture
-    def analysis_heat_only() -> dict:
+def analysis_heat_only() -> dict:
     """Analysis with heat stress but normal water."""
     return {
         "agroclimate": {

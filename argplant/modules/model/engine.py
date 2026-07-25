@@ -91,7 +91,8 @@ class RuleEngine:
         agro = analysis_data.get("agroclimate") or {}
         sat = analysis_data.get("satellite") or {}
         agron = analysis_data.get("agronomy") or {}
-        econ = analysis_data.get("economy") or {}
+        econ_section = analysis_data.get("economy") or {}
+        econ_latest = econ_section.get("latest_price") if isinstance(econ_section, dict) else {}
 
         current_stage = (agron.get("current_stage") or {}) if agron else {}
         crop_info = agron.get("crop_info", {})
@@ -199,7 +200,7 @@ class RuleEngine:
         sources = ["agroclimate", "agronomy"]
         if sat and sat.get("soil_moisture_value"):
             sources.append("satellite_smap")
-        if econ and econ.get("latest_price"):
+        if econ_latest:
             sources.append("economy")
 
         return PredictResponse(
@@ -242,7 +243,8 @@ class RuleEngine:
             if a.type == "water_stress":
                 weight *= sensitivity_mult.get(stage_sensitivity, 1.0)
             raw_score = weight * 100
-            factors.append(RiskFactor(name=a.type, score=round(raw_score, 1), weight=weight))
+            raw_score = min(raw_score, 100.0)  # cap at 100 for Pydantic validation
+            factors.append(RiskFactor(name=a.type, score=round(raw_score, 1), weight=round(weight, 2)))
             weighted_sum += raw_score * weight
             total_weight += weight
 
