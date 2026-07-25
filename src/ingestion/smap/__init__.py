@@ -1,1 +1,0 @@
-"""SMAP ingestion connector package."""
