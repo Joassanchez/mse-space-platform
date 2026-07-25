@@ -13,10 +13,13 @@ from fastapi import APIRouter, HTTPException
 
 from argplant.modules.analysis.orchestrator import AnalysisOrchestrator
 from argplant.modules.analysis.models import AnalysisRequest
+from argplant.modules.communication.models import AlertCreate
+from argplant.modules.communication.service import AlertService
 from argplant.modules.model.engine import RuleEngine
 from argplant.modules.model.models import PredictRequest, PredictResponse
 from argplant.shared.cache import _get_redis
 from argplant.shared.config import settings
+from argplant.shared.database import async_session
 
 logger = logging.getLogger("argplant.model")
 
@@ -71,5 +74,25 @@ async def predict(request: PredictRequest) -> PredictResponse:
             status_code=500,
             detail=f"Prediction engine error: {exc}",
         ) from exc
+
+    # 3. Auto-generate alerts from anomalies (async fire-and-forget)
+    for anomaly in result.anomalies:
+        if anomaly.severity in ("critical", "high"):
+            try:
+                async with async_session() as session:
+                    svc = AlertService(session)
+                    region_id = hash(request.lot_id) % 10000  # map lot_id to int
+                    await svc.create(AlertCreate(
+                        region_id=region_id,
+                        alert_type=anomaly.type,
+                        severity=anomaly.severity,
+                        title=f"{anomaly.type.replace('_', ' ').title()} — {request.lot_id}",
+                        message=anomaly.description,
+                        status="active",
+                        metadata_=anomaly.evidence,
+                    ))
+                    await session.commit()
+            except Exception:
+                logger.exception("Failed to auto-create alert for lot %s", request.lot_id)
 
     return result

@@ -63,6 +63,15 @@ class Settings(BaseSettings):
     ENABLE_SENTINEL: bool = True
     ENABLE_MAGYP: bool = True
 
+    # ------------------------------------------------------------------
+    # LLM / AI Provider
+    # ------------------------------------------------------------------
+    LLM_PROVIDER: str = "gemini"  # gemini | openai | anthropic | ollama
+    LLM_MODEL: str = "gemini-2.0-flash"
+    GEMINI_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+
 
 # Singleton
 settings = Settings()
