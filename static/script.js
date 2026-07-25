@@ -865,8 +865,11 @@ function updateKPIEconomy(analysis, predict) {
   // Try prediction economic impact first
   if (predict?.economic_impact?.estimated_loss_ars > 0) {
     if (label) label.textContent = 'PÉRDIDA PROYECTADA';
-    const lossM = Math.round(predict.economic_impact.estimated_loss_ars / 1000000);
-    if (el) el.innerHTML = `-$${lossM}M`;
+    const loss = predict.economic_impact.estimated_loss_ars;
+    const formatted = loss >= 1000000
+      ? `-$${(loss / 1000000).toFixed(1)}M`
+      : `-$${Math.round(loss).toLocaleString()}`;
+    if (el) el.innerHTML = formatted;
     if (sub) sub.textContent = `ARS Estimados / Campaña (${predict.economic_impact.loss_pct}% pérdida)`;
     return;
   }
@@ -1073,8 +1076,12 @@ function updateRecommendations(predict) {
     desc.innerHTML = `${r.action}.`;
   }
   if (predict.economic_impact) {
-    if (econDesc) econDesc.innerHTML = `La ejecución de esta acción protege el potencial de rinde en un <strong>+${Math.round(predict.economic_impact.protected_value_ars / 1000000)}%</strong>.`;
-    if (econValue) econValue.textContent = `+$${Math.round(predict.economic_impact.protected_value_ars / 1000000)}M ARS`;
+    const prot = predict.economic_impact.protected_value_ars;
+    const protFormatted = prot >= 1000000
+      ? `+$${(prot / 1000000).toFixed(1)}M`
+      : `+$${Math.round(prot).toLocaleString()}`;
+    if (econDesc) econDesc.innerHTML = `La ejecución de esta acción protege el potencial de rinde en un <strong>+${predict.economic_impact.loss_pct}%</strong>.`;
+    if (econValue) econValue.textContent = `${protFormatted} ARS`;
   }
 }
 
