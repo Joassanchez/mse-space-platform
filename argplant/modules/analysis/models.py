@@ -40,7 +40,8 @@ class AgroclimateSection(BaseModel):
 class SatelliteSection(BaseModel):
     """SMAP soil moisture and Sentinel optical scenes for the query area."""
 
-    soil_moisture: list[dict[str, Any]]  # SMAP scenes
+    soil_moisture: list[dict[str, Any]]  # SMAP scenes (metadata)
+    soil_moisture_value: dict[str, Any] | None = None  # extracted pixel value
     optical: list[dict[str, Any]]  # Sentinel scenes
 
 

@@ -8,6 +8,7 @@ gracefully by returning available data and flagging missing modules.
 import asyncio
 import logging
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 
 import redis.asyncio as aioredis
 
@@ -26,6 +27,7 @@ from argplant.modules.analysis.models import (
 )
 from argplant.modules.economy.service import PriceService
 from argplant.modules.satellite.service import SentinelService, SmapService
+from argplant.modules.satellite.smap_reader import SmapPixel, read_smap_pixel
 
 logger = logging.getLogger("argplant.analysis")
 
@@ -323,6 +325,7 @@ class AnalysisOrchestrator:
         from argplant.shared.database import async_session
 
         soil_moisture: list[dict] = []
+        soil_moisture_value: dict | None = None
         optical: list[dict] = []
 
         async with async_session() as session:
@@ -332,6 +335,34 @@ class AnalysisOrchestrator:
                 soil_moisture = [
                     r.model_dump(mode="json") for r in smap_results
                 ]
+
+                # Try to extract actual soil moisture value from the most recent scene
+                if smap_results and settings.SATELLITE_STORAGE_PATH:
+                    latest = smap_results[0]
+                    filepath = (
+                        Path(settings.SATELLITE_STORAGE_PATH)
+                        / "smap"
+                        / latest.scene_id
+                    )
+                    if filepath.exists():
+                        pixel = read_smap_pixel(
+                            str(filepath),
+                            lat=lat,
+                            lon=lon,
+                            scene_id=latest.scene_id,
+                            acquisition_date=latest.acquisition_date.isoformat(),
+                        )
+                        soil_moisture_value = pixel.to_dict()
+                    else:
+                        soil_moisture_value = {
+                            "status": "not_downloaded",
+                            "scene_id": latest.scene_id,
+                            "message": (
+                                "SMAP scene metadata available but file not downloaded. "
+                                "Use POST /api/v1/satellite/sentinel/{id}/download "
+                                "with the scene_id to retrieve and extract the value."
+                            ),
+                        }
             except Exception:
                 logger.exception("SMAP search failed during analysis gather")
 
@@ -352,7 +383,11 @@ class AnalysisOrchestrator:
             except Exception:
                 logger.exception("Sentinel search failed during analysis gather")
 
-        return SatelliteSection(soil_moisture=soil_moisture, optical=optical)
+        return SatelliteSection(
+            soil_moisture=soil_moisture,
+            soil_moisture_value=soil_moisture_value,
+            optical=optical,
+        )
 
     async def _fetch_agronomy(
         self, crop: str, query_date: date
