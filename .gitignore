@@ -2,24 +2,33 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
 .venv/
 venv/
 env/
+
+# Environment
+.env
 
 # IDE
 .vscode/
 .idea/
 
-# Environment
-.env
-*.env.local
+# OS
+.DS_Store
+Thumbs.db
 
-# Data (already ignored by data/.gitignore, but also at root level)
-data/raw/
-data/processed/
+# Docker
+pgdata/
 
-# Test artifacts
-.pytest_cache/
+# Satellite data (large files)
+data/satellite/*
+!data/satellite/.gitkeep
 
-# AI agent artifacts
-*atl/
+# Ruff
+.ruff_cache/

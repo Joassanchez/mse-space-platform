@@ -1,0 +1,14 @@
+# ARGPLANT economy — port ID to name mappings loaded at startup.
+# IDs match MAGyP Monitor de Granos numeric port codes.
+ports:
+  - puerto_id: 23
+    name: Rosario
+
+  - puerto_id: 2
+    name: Bahía Blanca
+
+  - puerto_id: 4
+    name: Quequén
+
+  - puerto_id: 6
+    name: Necochea

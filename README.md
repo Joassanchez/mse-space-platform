@@ -1,261 +1,389 @@
-# 🌍 MSE-Space Platform
+# ARGPLANT AI
 
-## Plataforma Inteligente de Gestión Hídrica y Riesgo Agroambiental
+**Motor Inteligente de Decisiones Agrícolas para la Pampa Húmeda**
 
-Repositorio oficial: https://github.com/Joassanchez/mse-space-platform.git
-
----
-
-## 🛰️ Contexto del Proyecto
-
-Este proyecto es desarrollado por el equipo **MSE-Space** en el marco del **Hackatón Argentina al Espacio**, dentro del desafío:
-
-> **“El poder de los datos desde el espacio”**
-
-La propuesta consiste en una plataforma técnica para integrar, procesar y analizar datos espaciales aplicados a la gestión hídrica, el monitoreo agroambiental y la anticipación de riesgos territoriales en Argentina.
-
-El objetivo principal es transformar datos satelitales y fuentes complementarias en información geoespacial procesada, indicadores territoriales, evaluaciones de riesgo, alertas y análisis asistido por inteligencia artificial.
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-ready-blue)](https://docker.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
 
-## 🎯 Objetivo
+## 📖 Índice
 
-Diseñar y validar una arquitectura modular capaz de convertir datos espaciales heterogéneos en información útil para la toma de decisiones hídrico-agroambientales.
-
-El sistema aborda casos como:
-
-- Monitoreo de humedad del suelo.
-- Detección de anegamientos e inundaciones.
-- Seguimiento de sequías y estrés hídrico.
-- Generación de indicadores territoriales.
-- Clasificación de riesgo hídrico-agroambiental.
-- Estimación de impacto económico potencial.
-- Enriquecimiento del análisis mediante agentes de IA.
-
-La plataforma se plantea como un **MVP técnico y validable**, no como una solución final completamente automatizada.
-
----
-
-## 🧠 Enfoque Técnico
-
-La arquitectura del sistema combina procesamiento determinístico e inteligencia artificial aplicada.
-
-Los procesos críticos de adquisición, validación, reproyección, transformación, almacenamiento y generación de capas geoespaciales se implementan mediante pipelines controlados y reproducibles.
-
-La inteligencia artificial se incorpora sobre datos ya procesados, principalmente para:
-
-- Interpretar indicadores.
-- Clasificar niveles de riesgo.
-- Priorizar zonas críticas.
-- Generar explicaciones.
-- Enriquecer contexto para análisis.
-- Asistir en alertas y reportes.
-
-Este enfoque permite mantener trazabilidad técnica en el procesamiento geoespacial y utilizar IA donde aporta mayor valor analítico.
+- [Descripción del Producto](#-descripción-del-producto)
+- [Casos de Uso](#-casos-de-uso)
+- [Arquitectura](#-arquitectura)
+- [Módulos](#-módulos)
+- [API Reference](#-api-reference)
+- [Stack Tecnológico](#-stack-tecnológico)
+- [Requisitos e Instalación](#-requisitos-e-instalación)
+- [Uso](#-uso)
+- [Endpoints de Ejemplo](#-endpoints-de-ejemplo)
+- [Variables de Entorno](#-variables-de-entorno)
+- [Desarrollo](#-desarrollo)
+- [Roadmap](#-roadmap)
 
 ---
 
-## 📦 Módulos del Sistema
+## 🚜 Descripción del Producto
 
-El sistema está organizado en módulos independientes pero encadenados:
+### El problema
 
-| Módulo | Nombre | Responsabilidad |
-|---|---|---|
-| **M1** | Ingesta de Datos | Descarga y registro de datos satelitales, inicialmente productos SMAP desde NASA Earthdata. Diseño extensible para futuras fuentes como SAOCOM, NISAR, SMN e INDEC. |
-| **M2** | ETL Geoespacial | Transformación de archivos HDF5 a GeoTIFF, validación, reproyección, clipping por región de interés y cálculo de estadísticas raster. |
-| **M3** | Almacenamiento Geoespacial | Persistencia centralizada en PostgreSQL/PostGIS para capas procesadas, regiones, indicadores, riesgos, alertas, impactos económicos y auditoría. |
-| **M4** | AI Core Ecosystem | Capa cognitiva basada en arquitectura hexagonal, con abstracción LLM, contexto, trazabilidad, herramientas y orquestación de agentes. |
-| **M5** | Agentes Inteligentes | Agentes especializados para análisis hídrico-ambiental, riesgo, impacto económico-productivo y alertas tempranas. |
-| **M6** | Conectores y Enriquecimiento | Integración de datos meteorológicos, indicadores socioeconómicos y contexto adicional para análisis asistido por IA. |
+Un productor agropecuario en la Pampa Húmeda toma más de 40 decisiones críticas por campaña —cuándo sembrar, si regar, cuándo aplicar fitosanitarios, cuándo cosechar—. Cada decisión se basa en datos que hoy están dispersos en múltiples fuentes: el servicio meteorológico, los satélites de NASA y Copernicus, los reportes del INTA, los precios del Monitor de Granos del MAGyP. **Nadie los unifica.** El productor termina decidiendo a ojo. Un error en etapa de floración puede costarle hasta el 25% del rinde.
 
----
+### La solución
 
-## 🔁 Flujo General
+**ARGPLANT AI** integra datos satelitales, agroclimáticos, agronómicos y económicos en una sola API. Un motor de reglas agronómicas detecta anomalías antes de que sean visibles a simple vista, y una capa de inteligencia artificial —potenciada por Gemini— genera **recomendaciones accionables en español**, en tiempo real.
 
-Satélites / APIs externas
-        │
-        ▼
-M1: Ingesta de datos
-        │
-        ▼
-M2: ETL geoespacial
-        │
-        ▼
-M3: Almacenamiento PostGIS
-        │
-        ├── M6: Clima / Socioeconomía / Contexto
-        │
-        ▼
-M4: AI Core Ecosystem
-        │
-        ▼
-M5: Agentes inteligentes
-        │
-        ▼
-Indicadores, riesgos, alertas y soporte a decisiones
+### ARGPLANT Data Service: el producto standalone
 
+El corazón del sistema es **ARGPLANT Data Service**, una API REST de datos agrícolas que **puede funcionar como producto independiente**. Si el proyecto de IA completo no llega a completarse, esta capa de datos ya es un entregable de valor por sí solo:
+
+- **Datos abiertos, unificados, normalizados** — NASA POWER, Sentinel, SMAP, MAGyP, todo en JSON limpio.
+- **OpenAPI/Swagger** — documentación interactiva lista para ser consumida por cualquier frontend, app móvil o dashboard.
+- **Gratuito y público** — todas las fuentes son de acceso libre, sin licencias privadas.
+- **Modular y extensible** — cada fuente de datos es un módulo independiente que puede activarse o desactivarse por configuración.
 
 ---
 
-## 🧱 Stack Técnico
+## 👥 Casos de Uso
 
-| Capa                          | Tecnología                                 |
-| ----------------------------- | ------------------------------------------ |
-| **Lenguaje principal**        | Python 3.11+                               |
-| **Ingesta**                   | earthaccess, h5py, requests                |
-| **Procesamiento geoespacial** | rasterio, GDAL, shapely, rioxarray, numpy  |
-| **Base de datos**             | PostgreSQL 15 + PostGIS                    |
-| **IA / LLM**                  | LiteLLM, LangGraph, PydanticAI, jsonschema |
-| **Observabilidad**            | OpenTelemetry, audit logs                  |
-| **Infraestructura**           | Docker, Docker Compose                     |
-| **Testing**                   | pytest, tests unitarios e integración      |
+| Para el Productor | Para el Ingeniero Agrónomo |
+|-------------------|---------------------------|
+| *"¿Qué hago hoy con el lote 123?"* | *"¿Cuál de mis 15 establecimientos necesita atención urgente?"* |
+| Recibe una alerta en su celular: "Estrés hídrico en R4. Regar 25mm zona norte esta noche." | Ve el panel de visión con NDVI, humedad de suelo SMAP, datos técnicos y score de riesgo. |
+| Conoce el impacto económico: "Si actuás ahora, protegés $9M ARS." | Respalda sus recomendaciones al productor con evidencia satelital y agronómica. |
+
+| Para el Desarrollador | Para la Institución |
+|-----------------------|---------------------|
+| Una API REST documentada. Un solo endpoint (`/api/v1/analysis`) devuelve todo unificado. | Monitoreo regional: INTA, municipios, cooperativas pueden consumir datos agregados para toda una zona. |
+| Feature flags por fuente: activá solo lo que tengas credenciales. | API gratuita, sin licencias. Datos de NASA, Copernicus y MAGyP. |
+
+### Posibilidades de desarrollo flexible
+
+ARGPLANT Data Service está diseñado como **plataforma**, no como producto cerrado. Sobre esta base de datos se pueden construir:
+
+- **Dashboards de visión** — como el incluido en este repositorio, que muestra KPIs, alertas y mapa satelital.
+- **Sistemas de alerta temprana** — con SSE (Server-Sent Events) para notificaciones en tiempo real al celular del productor.
+- **Modelos predictivos personalizados** — el rule engine actual es extensible; puede reemplazarse por ML sin tocar la capa de datos.
+- **Aplicaciones móviles** — la API devuelve JSON, CORS está habilitado, listo para cualquier frontend.
+- **Integraciones con ERPs agrícolas** — los datos normalizados pueden alimentar sistemas de gestión de establecimientos.
 
 ---
 
-## 🚀 Primeros Pasos
+## 🏗 Arquitectura
 
-### 1. Requisitos
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (Dashboard)                         │
+│                   http://localhost:8000/                            │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │ GET /api/v1/analysis
+                               │ POST /api/v1/predict
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ANALYSIS ORCHESTRATOR                            │
+│              argplant/modules/analysis/orchestrator.py              │
+│          asyncio.gather → 4 módulos en paralelo                    │
+└────┬──────────────┬──────────────┬──────────────┬───────────────────┘
+     │              │              │              │
+     ▼              ▼              ▼              ▼
+┌─────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│AGROCLIM │  │SATELLITE │  │ AGRONOMY │  │ ECONOMY  │
+│NASA POWER│ │SMAP      │  │BBCH/Kc   │  │MAGyP     │
+│OpenWeather│ │Sentinel  │  │INTA/FAO  │  │Precios   │
+└────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
+     │              │              │              │
+     └──────────────┴──────────────┴──────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                       RULE ENGINE (Modelo)                          │
+│                argplant/modules/model/engine.py                     │
+│     Reglas agronómicas → Anomalías → Riesgo → Yield → Impacto      │
+└──────────────────────────────┬──────────────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                     COMMUNICATION (Alertas)                         │
+│          POST /alerts  ·  SSE Stream  ·  NOTIFY PostgreSQL         │
+│          Gemini IA → Mensajes accionables en español               │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-* Python 3.11+
-* Docker y Docker Compose
-* Cuenta gratuita en NASA Earthdata Login
+---
 
-### 2. Clonar el repositorio
+## 📦 Módulos
 
+### 🌦️ Agroclimate
+Fuentes: **NASA POWER** (parámetros agroclimáticos históricos) + **OpenWeather** (condiciones actuales y forecast).
+- `GET /api/v1/agroclimate/weather?lat=&lon=`
+- `GET /api/v1/agroclimate/power?lat=&lon=&start_date=&end_date=&parameters=`
+
+### 🛰️ Satellite
+Fuentes: **SMAP** (humedad de suelo vía NASA Earthdata) + **Sentinel-1/2** (SAR y óptico vía Copernicus CDSE).
+- `GET /api/v1/satellite/smap?bbox=&start_date=&end_date=`
+- `GET /api/v1/satellite/sentinel/search?platform=&bbox=&start=&end=&max_cloud=`
+- `POST /api/v1/satellite/sentinel/{scene_id}/download`
+
+### 🌱 Agronomy
+Catálogos estáticos curados de **FAO-56** e **INTA**: etapas BBCH, coeficientes Kc, umbrales térmicos para soja y maíz.
+- `GET /api/v1/agronomy/crops`
+- `GET /api/v1/agronomy/crops/{id}/stages`
+
+### 💰 Economy
+Fuente: **MAGyP Monitor de Granos** — precios diarios de soja, maíz, trigo y girasol en puertos argentinos.
+- `GET /api/v1/economy/prices?producto=&puerto=&desde=&hasta=`
+
+### 🧠 Model (Prediction)
+Motor de reglas agronómicas que evalúa el análisis unificado y genera:
+- Anomalías (estrés hídrico, estrés térmico)
+- Score de riesgo con factores ponderados
+- Estimación de rinde y pérdida
+- Impacto económico proyectado
+- Recomendaciones accionables
+- **`POST /api/v1/predict`**
+
+### 🔗 Analysis (Orquestador)
+Unifica los 4 módulos en una sola respuesta. Usa `asyncio.gather` para ejecución paralela con degradación graceful.
+- **`GET /api/v1/analysis?lot_id=&crop=&lat=&lon=&date=`**
+
+### 📡 Communication (Alertas + IA)
+- **`POST /api/v1/alerts`** — crear alerta con deduplicación (ventana 8h)
+- **`GET /api/v1/alerts/stream`** — SSE para tiempo real vía PostgreSQL `NOTIFY`
+- **`POST /api/v1/chat`** — endpoint directo al LLM (Gemini por defecto, extensible a OpenAI)
+
+---
+
+## 📡 API Reference
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/health` | GET | Health check |
+| `/api/v1/analysis` | GET | **Análisis unificado** de los 4 módulos |
+| `/api/v1/predict` | POST | Predicción: anomalías, riesgo, yield, economía |
+| `/api/v1/agroclimate/weather` | GET | Clima actual (OpenWeather) |
+| `/api/v1/agroclimate/power` | GET | Parámetros agroclimáticos (NASA POWER) |
+| `/api/v1/satellite/smap` | GET | Catálogo SMAP |
+| `/api/v1/satellite/sentinel/search` | GET | Catálogo Sentinel-1/2 |
+| `/api/v1/satellite/sentinel/{id}/download` | POST | Descarga async de escena |
+| `/api/v1/agronomy/crops` | GET | Lista de cultivos |
+| `/api/v1/agronomy/crops/{id}/stages` | GET | Etapas BBCH del cultivo |
+| `/api/v1/economy/prices` | GET | Precios de granos (MAGyP) |
+| `/api/v1/alerts` | GET | Listar alertas activas |
+| `/api/v1/alerts` | POST | Crear alerta |
+| `/api/v1/alerts/stream` | GET | SSE — alertas en tiempo real |
+| `/api/v1/chat` | POST | Chat directo con LLM |
+| `/api/v1/jobs/{job_id}` | GET | Estado de job async |
+| `/docs` | GET | Swagger UI interactiva |
+
+---
+
+## 💻 Stack Tecnológico
+
+| Capa | Tecnología |
+|------|-----------|
+| API | FastAPI 0.115+ (async) |
+| HTTP Client | httpx (async, connection pooling) |
+| Base de Datos | PostgreSQL 16 + PostGIS |
+| ORM | SQLAlchemy 2.0 (async) |
+| Migraciones | Alembic |
+| Cache | Redis 7 |
+| Task Queue | arq (async + Redis) |
+| LLM | Gemini 3.5 Flash Lite (extensible a OpenAI, Anthropic) |
+| Frontend | Vanilla HTML/CSS/JS + Material Symbols |
+| Contenedores | Docker + Docker Compose |
+| Testing | pytest + pytest-asyncio + fakeredis |
+
+---
+
+## 🔧 Requisitos e Instalación
+
+### Prerrequisitos
+
+- [Docker](https://docs.docker.com/get-docker/) y Docker Compose
+- Python 3.12+ (opcional, solo para desarrollo local sin Docker)
+- API keys de servicios externos (ver [Variables de Entorno](#-variables-de-entorno))
+
+### Clonar e instalar
+
+```bash
 git clone https://github.com/Joassanchez/mse-space-platform.git
 cd mse-space-platform
+git checkout feature/argplant-data-service-06-analysis-orchestrator
 
-
-### 3. Configurar variables de entorno
-
+# Crear .env desde el template
 cp .env.example .env
 
-Completar en `.env` las credenciales necesarias:
+# Editar .env con tus API keys
+# OPENWEATHER_API_KEY=...
+# EARTHDATA_USERNAME=...
+# GEMINI_API_KEY=...
 
+# Construir y levantar
+docker compose build
+docker compose up -d
 
-EARTHDATA_USERNAME=
+# Ejecutar migraciones
+docker compose exec api alembic upgrade head
+```
+
+### Verificar
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Abrir dashboard
+open http://localhost:8000/
+
+# Abrir Swagger UI
+open http://localhost:8000/docs
+```
+
+> **Nota para Windows**: Si la DB falla con "database files are incompatible", eliminá el volumen anterior: `docker compose down -v && docker compose up -d`
+
+---
+
+## 🚀 Uso
+
+### Dashboard
+
+Abrí `http://localhost:8000/` → el dashboard carga automáticamente datos de Pergamino. Hacé clic en **"Ingresar Datos"** para cambiar lote, cultivo, coordenadas y fecha.
+
+### API — Un solo endpoint para el frontend
+
+```bash
+curl "http://localhost:8000/api/v1/analysis?lot_id=lote-123&crop=soy&lat=-33.9278607&lon=-60.567172&date=2026-07-21"
+```
+
+Devuelve datos unificados de los 4 módulos:
+
+```json
+{
+  "query": { "lot_id": "lote-123", "crop": "soy", "lat": -33.9278, "lon": -60.5671, "date": "2026-07-21" },
+  "agroclimate": { "current": { "temp": 25.3, "humidity": 55 }, "historical": { "precipitation_15d_mm": 10.4 } },
+  "satellite": { "soil_moisture_value": { "soil_moisture": 0.32 }, "optical": [] },
+  "agronomy": { "crop_info": { "name": "Soja" }, "current_stage": { "bbch_code": "75", "name": "Llenado de vainas" } },
+  "economy": { "latest_price": { "promedio": 498851, "fecha": "2026-07-21" } },
+  "meta": { "status": "complete", "missing_modules": [] }
+}
+```
+
+### Predicción y recomendaciones
+
+```bash
+curl -X POST http://localhost:8000/api/v1/predict \
+  -H "Content-Type: application/json" \
+  -d '{"lot_id":"lote-123","crop":"soy","lat":-33.9278607,"lon":-60.567172,"date":"2026-07-21"}'
+```
+
+### Alertas en tiempo real (SSE)
+
+```bash
+# Terminal 1: escuchar stream
+curl -N http://localhost:8000/api/v1/alerts/stream
+
+# Terminal 2: disparar predicción (genera alertas automáticamente)
+curl -X POST http://localhost:8000/api/v1/predict \
+  -H "Content-Type: application/json" \
+  -d '{"lot_id":"lote-123","crop":"soy","lat":-33.9278,"lon":-60.5671,"date":"2026-07-21"}'
+```
+
+---
+
+## 🔑 Variables de Entorno
+
+Copiá `.env.example` a `.env` y completá las que necesites. Las fuentes se activan/desactivan con flags:
+
+```ini
+# ── API Keys ──────────────────────────
+OPENWEATHER_API_KEY=        # https://home.openweathermap.org/api_keys
+EARTHDATA_USERNAME=         # https://urs.earthdata.nasa.gov/
 EARTHDATA_PASSWORD=
-OPENWEATHER_API_KEY=
+CDSE_USERNAME=              # https://identity.dataspace.copernicus.eu/
+CDSE_PASSWORD=
+GEMINI_API_KEY=             # https://aistudio.google.com/apikey
 
+# ── Feature Flags (activar/desactivar fuentes) ──
+ENABLE_OPENWEATHER=True
+ENABLE_NASA_POWER=True
+ENABLE_SMAP=True
+ENABLE_SENTINEL=False       # ← CDSE tarda 24h en activarse
+ENABLE_MAGYP=True
 
-### 4. Levantar base de datos
+# ── LLM / IA ──────────────────────────
+LLM_PROVIDER=gemini          # gemini | openai
+LLM_MODEL=gemini-3.5-flash-lite
 
-docker compose up -d postgres
+# ── Infra ─────────────────────────────
+DATABASE_URL=postgresql+asyncpg://argplant:argplant@localhost:5432/argplant
+REDIS_URL=redis://localhost:6379/0
+RATE_LIMIT_REQUESTS=60
+RATE_LIMIT_WINDOW_SECONDS=60
 
-### 5. Ejecutar migraciones
-
-
-for f in migrations/*.sql; do
-  docker compose exec -T postgres psql -U mse_user -d mse_platform < "$f"
-done
-
-### 6. Ejecutar ingesta SMAP
-
-docker compose run --rm ingestion
-
-
-O directamente con Python:
-
-pip install -r requirements.txt
-python -m src.jobs.run_smap_ingestion
-
-### 7. Ejecutar procesamiento geoespacial
-
-docker compose run --rm geospatial
-
-
-O vía CLI:
-
-python -m src.geospatial.cli.process_smap
-
+# ── Pergamino (coordenadas default) ───
+INGESTION_COORDS_LAT=-33.9278607
+INGESTION_COORDS_LON=-60.567172
+```
 
 ---
 
-## 🧪 Tests
+## 🧪 Desarrollo
 
-pytest tests/unit/
-pytest tests/integration/ -m integration
-pytest tests/ai/unit/
-pytest tests/ai/integration/ -m integration
+### Tests
 
+```bash
+# Todos los tests
+py -m pytest tests/ -v
 
----
+# Solo un módulo
+py -m pytest tests/unit/test_model_engine.py -v
+py -m pytest tests/integration/test_analysis_router.py -v
+```
 
-## 📁 Estructura del Proyecto
+### Lint
 
-mse-space-platform/
-├── src/
-│   ├── config/              # Configuración YAML y validadores
-│   ├── ingestion/           # M1: conectores de ingesta
-│   ├── geospatial/          # M2: ETL geoespacial
-│   ├── storage/             # M3: persistencia y metadatos
-│   ├── ai/                  # M4: AI Core Ecosystem
-│   ├── weather/             # M6: conectores meteorológicos
-│   ├── jobs/                # Jobs batch
-│   └── models/              # Modelos compartidos
-│
-├── migrations/              # Migraciones SQL
-├── data/                    # Datos raw, processed y metadata
-├── tests/                   # Tests unitarios e integración
-├── scripts/                 # Scripts auxiliares
-├── docs/                    # Documentación técnica y PRDs
-│
-├── docker-compose.yml
-├── Dockerfile
-├── requirements.txt
-└── pytest.ini
+```bash
+ruff check argplant/ tests/
+ruff check --fix argplant/ tests/
+```
+
+### Docker sin build completo (desarrollo local)
+
+```bash
+# Solo DB + Redis
+docker compose up -d db redis
+
+# API en local con hot reload
+pip install -e ".[dev]"
+uvicorn argplant.main:app --reload --port 8000
+```
 
 ---
 
-## 🏗️ Arquitectura por Módulo
+## 🗺 Roadmap
 
-### M1 — Ingesta de Datos
-
-Módulo encargado de conectar con fuentes externas, autenticar, buscar, descargar, validar y registrar archivos crudos. Actualmente prioriza productos SMAP desde NASA Earthdata, con diseño extensible para nuevas fuentes satelitales, meteorológicas o estadísticas.
-
-### M2 — ETL Geoespacial
-
-Pipeline responsable de transformar datos crudos en capas geoespaciales procesadas. Incluye lectura de HDF5, validación, generación de GeoTIFF, cálculo de estadísticas, manejo de nodata, clipping opcional por región y trazabilidad del procesamiento.
-
-### M3 — Almacenamiento Geoespacial
-
-Capa central de persistencia basada en PostgreSQL/PostGIS. Permite almacenar regiones, geometrías, capas procesadas, indicadores, evaluaciones de riesgo, alertas, impactos económicos y eventos de auditoría.
-
-### M4 — AI Core Ecosystem
-
-Capa cognitiva del sistema. Integra abstracción de modelos LLM, motor de contexto, herramientas, trazabilidad, gestión de estado y orquestación de flujos de agentes. Opera sobre datos ya estructurados y procesados por las capas anteriores.
-
-### M5 — Agentes Inteligentes
-
-Conjunto de agentes especializados para tareas de análisis hídrico-ambiental, clasificación de riesgo, interpretación económica-productiva y generación de alertas tempranas. Su función es asistir el análisis, no reemplazar el procesamiento geoespacial determinístico.
-
-### M6 — Conectores y Enriquecimiento
-
-Módulo orientado a incorporar fuentes complementarias como datos meteorológicos, indicadores socioeconómicos y contexto territorial. Estos datos enriquecen los análisis y mejoran la calidad del contexto disponible para los agentes de IA.
+| Estado | Ítem |
+|--------|------|
+| ✅ | Data Service — 4 módulos de ingesta de datos |
+| ✅ | Analysis Orchestrator — endpoint unificado |
+| ✅ | Rule Engine — detección de anomalías agronómicas |
+| ✅ | Prediction — riesgo, yield, impacto económico |
+| ✅ | Communication — alertas + SSE + PostgreSQL NOTIFY |
+| ✅ | Dashboard — frontend vanilla con datos reales |
+| ✅ | LLM Integration — Gemini (extensible a OpenAI) |
+| ✅ | Feature Flags — activar/desactivar fuentes por .env |
+| 🔲 | SAOCOM — satélite argentino (requiere acceso CONAE) |
+| 🔲 | NDVI real desde Sentinel-2 (procesamiento de bandas) |
+| 🔲 | Módulo de comunicación multicanal (email, WhatsApp) |
+| 🔲 | App móvil PWA |
+| 🔲 | Multi-lote — análisis simultáneo de varios establecimientos |
+| 🔲 | Modelos ML — reemplazar rule engine con machine learning |
 
 ---
 
-## 🔐 Variables de Entorno
+## 📄 Licencia
 
-| Variable              | Requerida | Descripción                    |
-| --------------------- | --------- | ------------------------------ |
-| `EARTHDATA_USERNAME`  | Sí        | Usuario de NASA Earthdata      |
-| `EARTHDATA_PASSWORD`  | Sí        | Contraseña de NASA Earthdata   |
-| `MAX_DAYS_RANGE`      | No        | Máximo de días por consulta    |
-| `OPENWEATHER_API_KEY` | No        | API key de OpenWeather para M6 |
-
----
-
-## 📌 Estado del Proyecto
-
-El proyecto se encuentra en desarrollo como MVP técnico para el hackatón. La prioridad actual es validar el flujo completo:
-
-datos espaciales → procesamiento geoespacial → almacenamiento → indicadores → IA aplicada → alertas → visualización / soporte a decisiones
-
----
-
-## 👥 Equipo
-
-**MSE-Space**
-
-Proyecto desarrollado para el desafío **“El poder de los datos desde el espacio”** del **Hackatón Argentina al Espacio**.
+MIT © 2026

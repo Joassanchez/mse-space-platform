@@ -1,80 +1,50 @@
 services:
-  postgres:
-    image: postgis/postgis:15-3.4-alpine
-    container_name: mse-postgres
+  db:
+    image: postgis/postgis:16-3.4
     environment:
-      POSTGRES_DB: mse_platform
-      POSTGRES_USER: mse_user
-      POSTGRES_PASSWORD: mse_pass
+      POSTGRES_USER: argplant
+      POSTGRES_PASSWORD: argplant
+      POSTGRES_DB: argplant
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mse_user -d mse_platform"]
+      test: ["CMD-SHELL", "pg_isready -U argplant"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  ingestion:
-    build: .
-    image: mse-platform:latest
-    environment:
-      EARTHDATA_USERNAME: ${EARTHDATA_USERNAME}
-      EARTHDATA_PASSWORD: ${EARTHDATA_PASSWORD}
-      MAX_DAYS_RANGE: ${MAX_DAYS_RANGE:-7}
-    volumes:
-      - platform-data:/app/data
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  geospatial:
-    build: .
-    image: mse-platform:latest
-    command: ["geospatial"]
-    environment:
-      PGHOST: postgres
-      PGDATABASE: mse_platform
-      PGUSER: mse_user
-      PGPASSWORD: mse_pass
-    volumes:
-      - platform-data:/app/data
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   redis:
     image: redis:7-alpine
-    container_name: mse-redis
     ports:
       - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 5
 
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    image: mse-backend:latest
-    container_name: mse-backend
+  api: &api
+    build: .
     ports:
       - "8000:8000"
+    env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://mse_user:mse_pass@postgres:5432/mse_platform
-      REDIS_URL: redis://redis:6379/1
-      API_KEY: ${BACKEND_API_KEY:-dev-secret-key}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
-      CACHE_TTL_DEFAULT: ${CACHE_TTL_DEFAULT:-300}
+      DATABASE_URL: "postgresql+asyncpg://argplant:argplant@db:5432/argplant"
+      REDIS_URL: "redis://redis:6379/0"
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+
+  worker:
+    <<: *api
+    ports: []
+    command: arq argplant.modules.ingestion.worker.WorkerSettings
 
 volumes:
   pgdata:
-  platform-data:

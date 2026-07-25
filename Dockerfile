@@ -1,19 +1,27 @@
-FROM python:3.11-slim
+# Stage 1: Build
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-# System deps for h5py, psycopg2, and rasterio (GDAL)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libhdf5-dev libgomp1 libgdal-dev && \
-    rm -rf /var/lib/apt/lists/*
+COPY pyproject.toml .
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -e . \
+    && pip install --no-cache-dir -e ".[dev]"
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Stage 2: Runtime
+FROM python:3.12-slim AS runtime
 
-COPY src/ src/
-COPY scripts/ scripts/
-COPY .env.example .env.example
+WORKDIR /app
 
-ENV PYTHONPATH=/app
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
-ENTRYPOINT ["bash", "scripts/entrypoint.sh"]
+COPY argplant/ ./argplant/
+COPY data/ ./data/
+COPY migrations/ ./migrations/
+COPY static/ ./static/
+COPY alembic.ini .
+
+EXPOSE 8000
+
+CMD ["uvicorn", "argplant.main:app", "--host", "0.0.0.0", "--port", "8000"]
