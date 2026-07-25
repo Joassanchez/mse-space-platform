@@ -1100,6 +1100,44 @@ function updateFilterPills(q) {
   if (bc) bc.textContent = `${q.lot_id} — ${q.crop === 'soy' ? 'Soja' : 'Maíz'}`;
 }
 
+/* ── Map Update ── */
+function updateMap(lat, lon) {
+  const mapImage = document.getElementById('map-image');
+  if (!mapImage) return;
+
+  // Static map tile from OpenStreetMap centered on coordinates (zoom level 12)
+  const zoom = 13;
+  const tileUrl = `https://tile.openstreetmap.org/${zoom}/${lon2tile(lon, zoom)}/${lat2tile(lat, zoom)}.png`;
+  
+  // Use a proper static map service or just update the marker position
+  // For now, update the background to show the general area
+  mapImage.style.backgroundImage = `url('https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=12&size=800x600&markers=${lat},${lon},red-pushpin')`;
+  
+  // Update marker positions relative to the map container
+  const markers = document.querySelectorAll('.map-marker');
+  if (markers.length >= 2) {
+    // Center marker at 50%, 50% of the container
+    markers[0].style.top = '45%';
+    markers[0].style.left = '48%';
+    markers[0].title = `Lote (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+  }
+  
+  // Update legend text
+  const legendTitle = document.querySelector('.legend-title');
+  if (legendTitle) legendTitle.textContent = `NDVI — ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+}
+
+// Tile conversion helpers
+function lon2tile(lon, zoom) {
+  return Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
+}
+function lat2tile(lat, zoom) {
+  return Math.floor(
+    ((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) *
+    Math.pow(2, zoom)
+  );
+}
+
 /* ── SSE ── */
 function connectSSE() {
   const es = new EventSource(`${API_BASE}/alerts/stream`);
@@ -1125,6 +1163,7 @@ async function runPrediction() {
 
   if (prediction || analysis) {
     updateFilterPills(q);
+    updateMap(q.lat, q.lon);
     updateKPISoilMoisture(prediction, analysis);
     updateKPIRisk(prediction);
     updateKPIWeather(analysis);
