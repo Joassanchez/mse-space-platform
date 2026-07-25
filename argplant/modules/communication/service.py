@@ -17,7 +17,7 @@ from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from argplant.modules.communication.models import Alert, AlertCreate, AlertResponse
-from argplant.shared.database import async_engine
+from argplant.shared.database import engine as async_engine
 
 logger = logging.getLogger("argplant.communication")
 
