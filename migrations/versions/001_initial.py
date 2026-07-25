@@ -7,6 +7,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers
 revision: str = "001_initial"
@@ -39,7 +40,7 @@ def upgrade() -> None:
         sa.Column("wind_speed", sa.Double(), nullable=True),
         sa.Column("conditions", sa.Text(), nullable=True),
         sa.Column("source", sa.Text(), server_default=sa.text("'openweather'"), nullable=False),
-        sa.Column("data", sa.JSONB(), nullable=False),
+        sa.Column("data", JSONB(), nullable=False),
         sa.Column("captured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
         sa.PrimaryKeyConstraint("id"),
@@ -57,10 +58,10 @@ def upgrade() -> None:
         sa.Column("id", sa.Uuid(), server_default=sa.text("gen_random_uuid()"), nullable=False),
         sa.Column("scene_id", sa.Text(), nullable=False),
         sa.Column("platform", sa.Text(), nullable=False),
-        sa.Column("bbox", sa.JSONB(), nullable=False),
+        sa.Column("bbox", JSONB(), nullable=False),
         sa.Column("acquisition_date", sa.DateTime(timezone=True), nullable=False),
         sa.Column("cloud_cover", sa.Double(), nullable=True),
-        sa.Column("metadata", sa.JSONB(), nullable=False),
+        sa.Column("metadata", JSONB(), nullable=False),
         sa.Column("file_path", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
         sa.PrimaryKeyConstraint("id"),
@@ -94,8 +95,8 @@ def upgrade() -> None:
         sa.Column("id", sa.Uuid(), server_default=sa.text("gen_random_uuid()"), nullable=False),
         sa.Column("job_type", sa.Text(), nullable=False),
         sa.Column("status", sa.Text(), server_default=sa.text("'queued'"), nullable=False),
-        sa.Column("params", sa.JSONB(), nullable=False),
-        sa.Column("result", sa.JSONB(), nullable=True),
+        sa.Column("params", JSONB(), nullable=False),
+        sa.Column("result", JSONB(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()")),
         sa.PrimaryKeyConstraint("id"),
